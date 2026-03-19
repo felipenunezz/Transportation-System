@@ -1,0 +1,7 @@
+﻿services:
+  transportation systemtransportationsystem:
+    image: transportation systemtransportationsystem
+    build:
+      context: .
+      dockerfile: Transportation System/Dockerfile
+
