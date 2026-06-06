@@ -1,7 +1,27 @@
 ﻿services:
-  transportation systemtransportationsystem:
-    image: transportation systemtransportationsystem
-    build:
-      context: .
-      dockerfile: Transportation System/Dockerfile
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    restart: unless-stopped
 
+  web:
+    build: 
+      context: ./src/BusTransportIoT.Web
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MQTT_BROKER=mosquitto
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/bustransport.db
+    volumes:
+      - sqlite-data:/app/data
+    depends_on:
+      - mosquitto
+
+volumes:
+  sqlite-data:

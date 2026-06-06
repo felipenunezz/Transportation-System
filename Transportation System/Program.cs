@@ -1,30 +1,48 @@
-using Transportation_System.Components;
+using Microsoft.EntityFrameworkCore;
+using Transportation_System.DataBase;
 using Transportation_System.Models;
 using Transportation_System.Services;
+using Transportation_System.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+                       ?? "Data Source=Database.db";
+
+builder.Services.AddDbContextFactory<BusDbContext>(options => options.UseSqlite(connectionString));
+builder.Services.AddScoped<BusDbContext>(provider => provider.GetRequiredService<IDbContextFactory<BusDbContext>>().CreateDbContext());
+builder.Services.AddSignalR();
+builder.Services.AddControllersWithViews();
+builder.Services.AddHostedService<MqttService>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthorization();
 
-app.UseAntiforgery();
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Dashboard}/{id?}");
 
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+// SignalR hub endpoint
+app.MapHub<BusTrackingHub>("/busHub");
+
+// Create database and apply migrations
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<BusDbContext>();
+    dbContext.Database.EnsureCreated();
+}
 
 app.Run();

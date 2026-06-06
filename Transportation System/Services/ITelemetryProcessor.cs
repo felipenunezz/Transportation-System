@@ -1,6 +1,6 @@
 ﻿namespace Transportation_System.Services;
 
-public class MqqtWorker
+public class ITelemetryProcessor
 {
     
 }
