@@ -16,7 +16,8 @@ builder.Services.AddDbContext<BusDbContext>(options =>
 builder.Services.AddSignalR();
 
 // Add MQTT service as background service
-builder.Services.AddHostedService<MqttService>();
+//builder.Services.AddHostedService<MqttService>();
+//not working right now, working on a better implementation
 
 var app = builder.Build();
 
