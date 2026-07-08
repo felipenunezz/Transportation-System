@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Transportation_System.Models.Domain;
 
@@ -17,5 +18,6 @@ namespace Transportation_System.Models.Domain;
         public bool IsActive { get; set; }
         
         // Navigation property
+        [JsonIgnore]
         public List<BusStop> Stops { get; set; } = new List<BusStop>();
     }

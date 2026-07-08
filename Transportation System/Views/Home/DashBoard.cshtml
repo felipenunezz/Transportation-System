@@ -36,19 +36,26 @@
                 </div>
                 <div class="card-body">
                     <div id="bus-list">
-                        @foreach (var bus in buses)
+                        @if (buses != null && buses.Any())
                         {
-                            <div class="card mb-2 bus-card" data-bus-id="@bus.Id">
-                                <div class="card-body">
-                                    <h6>@bus.BusNumber</h6>
-                                    <small>Route: @bus.BusRouteName</small><br/>
-                                    <small>Status: <span class="badge bg-success">@bus.Status</span></small>
-                                    <br/>
-                                    <small>Speed: <span class="speed">@bus.Speed</span> km/h</small>
-                                    <br/>
-                                    <small>Passengers: @bus.PassengerCount</small>
+                            foreach (var bus in buses)
+                            {
+                                <div class="card mb-2 bus-card" data-bus-id="@bus.Id">
+                                    <div class="card-body">
+                                        <h6>@bus.BusNumber</h6>
+                                        <small>Route: @bus.BusRouteName</small><br/>
+                                        <small>Status: <span class="badge bg-success">@bus.Status</span></small>
+                                        <br/>
+                                        <small>Speed: <span class="speed">@bus.Speed</span> km/h</small>
+                                        <br/>
+                                        <small>Passengers: <span class="passengers">@bus.PassengerCount</span></small>
+                                    </div>
                                 </div>
-                            </div>
+                            }
+                        }
+                        else
+                        {
+                            <p>No active buses at the moment.</p>
                         }
                     </div>
                 </div>
@@ -62,7 +69,7 @@
                 <div class="card-body">
                     <a asp-controller="Buses" asp-action="Index" class="btn btn-primary btn-block mb-2">Manage Buses</a>
                     <a asp-controller="BusStops" asp-action="Index" class="btn btn-secondary btn-block mb-2">Manage Stops</a>
-                    <a asp-controller="Routes" asp-action="Index" class="btn btn-info btn-block">Manage Routes</a>
+                    <a asp-controller="BusRoutes" asp-action="Index" class="btn btn-info btn-block">Manage Routes</a>
                 </div>
             </div>
         </div>
@@ -70,9 +77,42 @@
 </div>
 
 @section Scripts {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script src="~/js/map.js"></script>
-    <script src="~/js/dashboard.js"></script>
+    <script>
+        // SignalR connection for real-time updates
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/busHub")
+            .build();
+        
+        connection.on("BusLocationUpdated", (data) => {
+            console.log('Real-time update:', data);
+            
+            // Update map marker
+            if (typeof updateBusRealtime === 'function') {
+                updateBusRealtime(
+                    data.busId, 
+                    data.latitude, 
+                    data.longitude, 
+                    data.speed, 
+                    data.passengerCount
+                );
+            }
+            
+            // Update bus card in sidebar
+            const busItem = document.querySelector(`[data-bus-id="${data.busId}"]`);
+            if (busItem) {
+                const speedEl = busItem.querySelector('.speed');
+                const passengersEl = busItem.querySelector('.passengers');
+                if (speedEl) speedEl.textContent = data.speed;
+                if (passengersEl) passengersEl.textContent = data.passengerCount;
+            }
+        });
+        
+        connection.start()
+            .then(() => console.log('SignalR connected'))
+            .catch(err => console.log('SignalR connection pending:', err));
+    </script>
 }

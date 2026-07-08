@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Transportation_System.Models.Domain;
 
@@ -25,6 +26,7 @@ namespace Transportation_System.Models.Domain;
         // Foreign key
         [Display(Name = "Route")]
         public int? BusRouteId { get; set; }
+        [JsonIgnore]
         public BusRoute? BusRoute { get; set; }
         
         [Display(Name = "Stop Order")]

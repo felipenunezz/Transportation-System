@@ -1,28 +1,29 @@
 using Microsoft.EntityFrameworkCore;
 using Transportation_System.DataBase;
-using Transportation_System.Models;
-using Transportation_System.Services;
 using Transportation_System.Hubs;
+using Transportation_System.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-                       ?? "Data Source=Database.db";
-
-builder.Services.AddDbContextFactory<BusDbContext>(options => options.UseSqlite(connectionString));
-builder.Services.AddScoped<BusDbContext>(provider => provider.GetRequiredService<IDbContextFactory<BusDbContext>>().CreateDbContext());
-builder.Services.AddSignalR();
+// Add MVC services
 builder.Services.AddControllersWithViews();
+
+// Add SQLite database
+builder.Services.AddDbContext<BusDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add SignalR for real-time web updates
+builder.Services.AddSignalR();
+
+// Add MQTT service as background service
 builder.Services.AddHostedService<MqttService>();
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
@@ -31,6 +32,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
 
+// MVC routes
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Dashboard}/{id?}");
