@@ -97,7 +97,9 @@ public class MqttService : BackgroundService
     {
         if (_mqttClient.IsConnected)
         {
-            await _mqttClient.DisconnectAsync(cancellationToken: cancellationToken);
+            await _mqttClient.DisconnectAsync(new MqttClientDisconnectOptions(){
+                Reason = MqttClientDisconnectOptionsReason.NormalDisconnection
+            });
         }
         await base.StopAsync(cancellationToken);
     }
