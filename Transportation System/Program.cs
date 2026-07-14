@@ -21,7 +21,6 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -33,15 +32,12 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
 
-// MVC routes
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Dashboard}/{id?}");
 
-// SignalR hub endpoint
 app.MapHub<BusTrackingHub>("/busHub");
 
-// Create database and apply migrations
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<BusDbContext>();
