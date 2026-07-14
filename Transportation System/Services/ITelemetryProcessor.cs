@@ -1,6 +1,6 @@
 ﻿namespace Transportation_System.Services;
 
-public class BusService
+public class ITelemetryProcessor
 {
     
 }
