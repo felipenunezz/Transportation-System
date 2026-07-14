@@ -1,18 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using Transportation_System.DataBase;
 using Transportation_System.Hubs;
-using Transportation_System.MQTT;
 using Transportation_System.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add MVC services
 builder.Services.AddControllersWithViews();
+
+// Add SQLite database
 builder.Services.AddDbContext<BusDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add SignalR for real-time web updates
 builder.Services.AddSignalR();
-builder.Services.AddScoped<BusService>();
-builder.Services.AddScoped<TelemetryProcessor>();
-builder.Services.AddHostedService<MqttService>();
+
+// Add MQTT service as background service
+//builder.Services.AddHostedService<MqttService>();
+//not working right now, working on a better implementation
 
 var app = builder.Build();
 
