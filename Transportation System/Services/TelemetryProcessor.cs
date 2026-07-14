@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNet.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Transportation_System.Hubs;
