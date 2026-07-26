@@ -27,7 +27,7 @@ public class BusService
     {
         var bus = await _dbContext.Buses.FindAsync(busUpdate.Id);
 
-        if (bus != null)
+        if (bus == null)
         {
             throw new InvalidOperationException($"Bus {busUpdate.Id} does not exists");
         }
