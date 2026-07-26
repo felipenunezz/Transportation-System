@@ -3,12 +3,19 @@ using Transportation_System.DataBase;
 using Transportation_System.Hubs;
 using Transportation_System.MQTT;
 using Transportation_System.Services;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 builder.Services.AddDbContext<BusDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount:5,
+                maxRetryDelay:TimeSpan.FromSeconds(10),
+                errorCodesToAdd: null)));
 builder.Services.AddSignalR();
 builder.Services.AddScoped<BusService>();
 builder.Services.AddScoped<TelemetryProcessor>();

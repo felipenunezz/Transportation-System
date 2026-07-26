@@ -1,5 +1,6 @@
 ﻿using MQTTnet;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 using Transportation_System.Models.Domain;
 using Transportation_System.Services;
@@ -12,16 +13,19 @@ public class MqttService : BackgroundService
     private readonly IMqttClient _mqttClient;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly MqttClientFactory _mqttClientFactory;
-    private BackgroundService _backgroundServiceImplementation;
     
-    private const string BrokerHost = "localhost";
-    private const int BrokerPort = 1883;
+    private readonly string _brokerHost;
+    private readonly int _brokerPort;
     private const string TelemetryTopic = "buses/+/telemetry";
 
-    public MqttService(IServiceScopeFactory scopeFactory, ILogger<MqttService> logger)
+    public MqttService(IServiceScopeFactory scopeFactory, ILogger<MqttService> logger, IConfiguration config)
     {
         _logger = logger;
         _scopeFactory = scopeFactory;
+        
+        _brokerHost = config["MqttSettings:BrokerAddress"] ?? "localhost";
+        _brokerPort = int.TryParse(config["MqttSettings:BrokerPort"] , out var port) ? port : 1883;
+        
         _mqttClientFactory = new MqttClientFactory();
         _mqttClient = _mqttClientFactory.CreateMqttClient();
     }
@@ -43,13 +47,13 @@ public class MqttService : BackgroundService
     private async Task ConnectedAsync(CancellationToken cancellationToken)
     {
         var options = new MqttClientOptionsBuilder()
-            .WithTcpServer(BrokerHost, BrokerPort)
+            .WithTcpServer(_brokerHost, _brokerPort)
             .WithClientId("TransportationSystem-" + Environment.MachineName)
             .WithCleanSession()
             .Build();
 
         try { await _mqttClient.ConnectAsync(options, cancellationToken); }
-    catch (Exception e) { _logger.LogError(e, "Could not connect to Mqtt broker at {Host}:{Port}.",  BrokerHost, BrokerPort); }
+    catch (Exception e) { _logger.LogError(e, "Could not connect to Mqtt broker at {Host}:{Port}.",  _brokerHost, _brokerPort); }
     }    
     private async Task OnConnectedAsync(MqttClientConnectedEventArgs arg)
     {

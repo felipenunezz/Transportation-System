@@ -1,27 +1,52 @@
 ﻿services:
   mosquitto:
-    image: eclipse-mosquitto:2
+    image: eclipse-mosquitto
     ports:
       - "1883:1883"
       - "9001:9001"
     volumes:
+      - mosquitto-data:/mosquitto/data
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
     restart: unless-stopped
+    networks:
+      - transport_network
 
   web:
-    build: 
-      context: ./src/BusTransportIoT.Web
-      dockerfile: Dockerfile
+    build:
+      context: .
+      dockerfile: "Transportation_System/Dockerfile"
     ports:
-      - "5000:80"
+      - "8081:8080"
+    networks:
+      - transport_network
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - MQTT_BROKER=mosquitto
-      - ConnectionStrings__DefaultConnection=Data Source=/app/data/bustransport.db
-    volumes:
-      - sqlite-data:/app/data
+      - MqttSettings__BrokerAddress
+      - ConnectionStrings__DefaultConnection
     depends_on:
-      - mosquitto
+      mosquitto:
+        condition: service_started
+      postgres:
+        condition: service_started
+
+  postgres:
+    image: postgres:17
+    environment:
+       - POSTGRES_USER=postgres
+       - POSTGRES_PASSWORD=ABC123
+       - POSTGRES_DB=transportationDb
+    ports:
+      - "54325:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - transport_network
 
 volumes:
-  sqlite-data:
+  postgres-data: { }
+  mosquitto-data:
+    
+networks:
+  transport_network:
+    driver: bridge
+    name: transport_net
+    

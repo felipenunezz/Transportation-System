@@ -66,10 +66,12 @@
                 <div class="card-header">
                     <h5>Management</h5>
                 </div>
-                <div class="card-body">
-                    <a asp-controller="Buses" asp-action="Index" class="btn btn-primary btn-block mb-2">Manage Buses</a>
-                    <a asp-controller="BusStops" asp-action="Index" class="btn btn-secondary btn-block mb-2">Manage Stops</a>
-                    <a asp-controller="BusRoutes" asp-action="Index" class="btn btn-info btn-block">Manage Routes</a>
+                <div class="d-flex justify-content-center">
+                    <div>
+                        <a asp-controller="BusController" asp-action="Index" class="btn btn-primary btn-block mb-1">Manage Buses</a>
+                        <a asp-controller="BusStopController" asp-action="Index" class="btn btn-secondary btn-block mb-1">Manage Stops</a>
+                        <a asp-controller="BusRouteController" asp-action="Index" class="btn btn-info btn-block mb-1">Manage Routes</a>
+                    </div>
                 </div>
             </div>
         </div>
