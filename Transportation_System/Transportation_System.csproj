@@ -12,15 +12,16 @@
 
     <ItemGroup>
       <PackageReference Include="ChartJs.Blazor.Fork" Version="2.0.2" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.9" />
+      <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.10" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.9">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.19.2" />
       <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2" />
       <PackageReference Include="MQTTnet" Version="5.2.0.1603" />
       <PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     </ItemGroup>
 
     <ItemGroup>
@@ -89,10 +90,6 @@
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Data\MIgrations\" />
     </ItemGroup>
 
 </Project>

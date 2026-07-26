@@ -1,23 +1,25 @@
 using Microsoft.EntityFrameworkCore;
 using Transportation_System.DataBase;
 using Transportation_System.Hubs;
+using Transportation_System.MQTT;
 using Transportation_System.Services;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
+using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add MVC services
-builder.Services.AddControllersWithViews();
-
-// Add SQLite database
+builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 builder.Services.AddDbContext<BusDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Add SignalR for real-time web updates
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount:5,
+                maxRetryDelay:TimeSpan.FromSeconds(10),
+                errorCodesToAdd: null)));
 builder.Services.AddSignalR();
-
-// Add MQTT service as background service
-//builder.Services.AddHostedService<MqttService>();
-//not working right now, working on a better implementation
+builder.Services.AddScoped<BusService>();
+builder.Services.AddScoped<TelemetryProcessor>();
+builder.Services.AddHostedService<MqttService>();
 
 var app = builder.Build();
 
