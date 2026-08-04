@@ -1,0 +1,65 @@
+@model Transportation_System.Models.Domain.Bus
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    ViewData["Title"] = "Delete";
+}
+
+<div class="text-center mb-3">
+    <i class="fa-solid fa-triangle-exclamation text-danger fa-3x"></i>
+</div>
+
+<dl class="row mb-4">
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-hash me-1"></i>Bus Number
+    </dt>
+    <dd class="col-sm-8 fw-semibold">@Html.DisplayFor(model => model.BusNumber)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-signpost-2 me-1"></i>Route Name
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.BusRoute.Name)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-globe me-1"></i>Latitude
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.CurrentLatitude)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-globe me-1"></i>Longitude
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.CurrentLongitude)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-speedometer2 me-1"></i>Speed
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.Speed)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-people me-1"></i>Passengers
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.PassengerCount)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-circle-fill me-1"></i>Status
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.Status)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-clock me-1"></i>Last Update
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.LastUpdate)</dd>
+</dl>
+
+<form asp-action="Delete" method="post" id="deleteForm" class="ajax-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+        <button type="submit" class="btn btn-danger">
+            <i class="fa-solid fa-trash-can me-1"></i>Delete
+        </button>
+    </div>
+</form>

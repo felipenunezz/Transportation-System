@@ -13,19 +13,19 @@ namespace Transportation_System.Controllers
     public class BusRouteController : Controller
     {
         private readonly BusDbContext _context;
+        private readonly ILogger<BusRouteController> _logger;
 
-        public BusRouteController(BusDbContext context)
+        public BusRouteController(BusDbContext context , ILogger<BusRouteController> logger)
         {
+            _logger = logger;
             _context = context;
         }
-
-        // GET: BusRoute
+        
         public async Task<IActionResult> Index()
         {
             return View(await _context.BusRoutes.ToListAsync());
         }
-
-        // GET: BusRoute/Details/5
+        
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -40,32 +40,28 @@ namespace Transportation_System.Controllers
                 return NotFound();
             }
 
-            return View(busRoute);
+            return View("_Details", busRoute);
         }
-
-        // GET: BusRoute/Create
+        
         public IActionResult Create()
         {
-            return View();
+            return PartialView("_Create", new BusRoute());
         }
-
-        // POST: BusRoute/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,IsActive")] BusRoute busRoute)
+        public async Task<IActionResult> Create([Bind("Name,Description,IsActive")] BusRoute busRoute)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _context.Add(busRoute);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return PartialView("_Create", busRoute);
             }
-            return View(busRoute);
-        }
 
-        // GET: BusRoute/Edit/5
+            _context.Add(busRoute);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+        
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -78,12 +74,9 @@ namespace Transportation_System.Controllers
             {
                 return NotFound();
             }
-            return View(busRoute);
+            return View("_Edit", busRoute);
         }
-
-        // POST: BusRoute/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,IsActive")] BusRoute busRoute)
@@ -113,10 +106,9 @@ namespace Transportation_System.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(busRoute);
+            return View("_Edit", busRoute);
         }
-
-        // GET: BusRoute/Delete/5
+        
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -131,10 +123,9 @@ namespace Transportation_System.Controllers
                 return NotFound();
             }
 
-            return View(busRoute);
+            return View("_Delete",busRoute);
         }
-
-        // POST: BusRoute/Delete/5
+        
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

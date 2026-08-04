@@ -47,7 +47,7 @@ public class HomeController : Controller
                 {
                     id = b.Id,
                     busNumber = b.BusNumber,
-                    routeName = b.BusRouteName,
+                    routeName = b.BusRouteId,
                     currentLatitude = b.CurrentLatitude,
                     currentLongitude = b.CurrentLongitude,
                     speed = b.Speed,
