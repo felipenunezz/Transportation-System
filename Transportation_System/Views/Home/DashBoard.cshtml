@@ -1,4 +1,5 @@
 ﻿@using Transportation_System.Models.Domain
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 @{
     Layout = "_Layout";
@@ -16,7 +17,6 @@
     </div>
     
     <div class="row">
-        <!-- Map Section -->
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
@@ -28,7 +28,6 @@
             </div>
         </div>
         
-        <!-- Bus List Section -->
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header">
@@ -43,7 +42,7 @@
                                 <div class="card mb-2 bus-card" data-bus-id="@bus.Id">
                                     <div class="card-body">
                                         <h6>@bus.BusNumber</h6>
-                                        <small>Route: @bus.BusRouteName</small><br/>
+                                        <small>Route: @bus.BusRouteId</small><br/>
                                         <small>Status: <span class="badge bg-success">@bus.Status</span></small>
                                         <br/>
                                         <small>Speed: <span class="speed">@bus.Speed</span> km/h</small>
@@ -60,20 +59,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Quick Links -->
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h5>Management</h5>
-                </div>
-                <div class="d-flex justify-content-center">
-                    <div>
-                        <a asp-controller="BusController" asp-action="Index" class="btn btn-primary btn-block mb-1">Manage Buses</a>
-                        <a asp-controller="BusStopController" asp-action="Index" class="btn btn-secondary btn-block mb-1">Manage Stops</a>
-                        <a asp-controller="BusRouteController" asp-action="Index" class="btn btn-info btn-block mb-1">Manage Routes</a>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -82,39 +67,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-    <script src="~/js/map.js"></script>
-    <script>
-        // SignalR connection for real-time updates
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/busHub")
-            .build();
-        
-        connection.on("BusLocationUpdated", (data) => {
-            console.log('Real-time update:', data);
-            
-            // Update map marker
-            if (typeof updateBusRealtime === 'function') {
-                updateBusRealtime(
-                    data.busId, 
-                    data.latitude, 
-                    data.longitude, 
-                    data.speed, 
-                    data.passengerCount
-                );
-            }
-            
-            // Update bus card in sidebar
-            const busItem = document.querySelector(`[data-bus-id="${data.busId}"]`);
-            if (busItem) {
-                const speedEl = busItem.querySelector('.speed');
-                const passengersEl = busItem.querySelector('.passengers');
-                if (speedEl) speedEl.textContent = data.speed;
-                if (passengersEl) passengersEl.textContent = data.passengerCount;
-            }
-        });
-        
-        connection.start()
-            .then(() => console.log('SignalR connected'))
-            .catch(err => console.log('SignalR connection pending:', err));
-    </script>
+    <script src="/js/map.js"></script>
+    <script src="/js/dashboard.js"></script>
 }

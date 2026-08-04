@@ -58,3 +58,17 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+#sidebar-root .nav-pills .nav-link {
+    color: rgba(255, 255, 255, 0.65);
+    transition: color 0.15s ease-in-out;
+}
+
+#sidebar-root .nav-pills .nav-link:hover,
+#sidebar-root .nav-pills .nav-link:focus {
+    color: rgba(255, 255, 255, 1);
+}
+
+#sidebar-root .nav-pills .nav-link.active {
+    color: #fff;
+}s

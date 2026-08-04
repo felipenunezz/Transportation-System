@@ -1,0 +1,47 @@
+@model Transportation_System.Models.Domain.BusStop
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<div class="mb-3 text-center">
+    <i class="bi bi-info-circle text-info fa-2x"></i>
+</div>
+
+<dl class="row">
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-tag me-1"></i>Stop Name
+    </dt>
+    <dd class="col-sm-8 fw-semibold">@Html.DisplayFor(model => model.Name)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-geo-alt me-1"></i>Address
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.Address)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-globe me-1"></i>Latitude
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.Latitude)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-globe me-1"></i>Longitude
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.Longitude)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-people me-1"></i>Waiting
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.WaitingPassengers)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-signpost-2 me-1"></i>Route
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.BusRoute.Name)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-list-ol me-1"></i>Stop Order
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.StopOrder)</dd>
+</dl>

@@ -13,19 +13,24 @@ namespace Transportation_System.Controllers
     public class BusController : Controller
     {
         private readonly BusDbContext _context;
+        private readonly ILogger<BusController> _logger;
 
-        public BusController(BusDbContext context)
+        public BusController(BusDbContext context, ILogger<BusController> logger)
         {
             _context = context;
+            _logger = logger;
         }
-
-        // GET: Bus
+        
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Buses.ToListAsync());
+            ViewData["BusRouteId"] = new SelectList(_context.BusRoutes, "Id", "Name");
+    
+            // Add .Include() to load the related BusRoute
+            return View(await _context.Buses
+                .Include(b => b.BusRoute)
+                .ToListAsync());
         }
-
-        // GET: Bus/Details/5
+        
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -34,38 +39,46 @@ namespace Transportation_System.Controllers
             }
 
             var bus = await _context.Buses
+                .Include(b => b.BusRoute) 
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (bus == null)
             {
                 return NotFound();
             }
 
-            return View(bus);
+            return View("_Details",bus);
         }
-
-        // GET: Bus/Create
+        
         public IActionResult Create()
         {
-            return View();
+            ViewData["BusRouteId"] = new SelectList(_context.BusRoutes, "Id", "Name");
+            return PartialView("_Create", new Bus());
         }
 
-        // POST: Bus/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,BusNumber,BusRouteName,CurrentLatitude,CurrentLongitude,Speed,PassengerCount,Status,LastUpdate")] Bus bus)
+        public async Task<IActionResult> Create([Bind("BusNumber,BusRouteId,CurrentLatitude,CurrentLongitude,Speed,PassengerCount,Status")] Bus bus)
         {
             if (ModelState.IsValid)
             {
+                bus.LastUpdate = DateTime.UtcNow;
                 _context.Add(bus);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(bus);
-        }
 
-        // GET: Bus/Edit/5
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateException ex)
+                {
+                    _logger.LogError(ex, "Failed to save Bus {@Bus}", bus);
+                    ModelState.AddModelError(nameof(bus.BusRouteId), "Selected route no longer exists. Please choose a valid route.");
+                }
+            }
+
+            ViewData["BusRouteId"] = new SelectList(_context.BusRoutes, "Id", "Name", bus.BusRouteId);
+            return PartialView("_Create", bus);
+        }
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -78,12 +91,13 @@ namespace Transportation_System.Controllers
             {
                 return NotFound();
             }
-            return View(bus);
+            ViewData["busRouteId"] = new SelectList(_context.BusRoutes, "Id", "Name", bus.BusRouteId);
+            return View("_Edit",bus);
         }
         
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,BusNumber,BusRouteName,CurrentLatitude,CurrentLongitude,Speed,PassengerCount,Status,LastUpdate")] Bus bus)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,BusNumber,BusRouteId,CurrentLatitude,CurrentLongitude,Speed,PassengerCount,Status")] Bus bus)
         {
             if (id != bus.Id)
             {
@@ -94,6 +108,7 @@ namespace Transportation_System.Controllers
             {
                 try
                 {
+                    bus.LastUpdate = DateTime.UtcNow;
                     _context.Update(bus);
                     await _context.SaveChangesAsync();
                 }
@@ -110,10 +125,10 @@ namespace Transportation_System.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(bus);
+            ViewData["BusRouteId"] = new SelectList(_context.BusRoutes, "Id", "Name", bus.BusRouteId);
+            return View("_Edit", bus);
         }
-
-        // GET: Bus/Delete/5
+        
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -122,16 +137,16 @@ namespace Transportation_System.Controllers
             }
 
             var bus = await _context.Buses
+                .Include(b => b.BusRoute)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (bus == null)
             {
                 return NotFound();
             }
 
-            return View(bus);
+            return View("_Delete", bus);
         }
-
-        // POST: Bus/Delete/5
+        
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

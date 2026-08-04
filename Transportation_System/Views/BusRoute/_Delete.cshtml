@@ -1,0 +1,45 @@
+@model Transportation_System.Models.Domain.BusRoute
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<div class="text-center mb-3">
+    <i class="fa-solid fa-triangle-exclamation text-danger fa-3x"></i>
+</div>
+
+<dl class="row mb-4">
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-tag me-1"></i>Name
+    </dt>
+    <dd class="col-sm-8 fw-semibold">@Html.DisplayFor(model => model.Name)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-card-text me-1"></i>Description
+    </dt>
+    <dd class="col-sm-8">@Html.DisplayFor(model => model.Description)</dd>
+
+    <dt class="col-sm-4 text-muted">
+        <i class="bi bi-circle-fill me-1"></i>Status
+    </dt>
+    <dd class="col-sm-8">
+        @if (Model.IsActive)
+        {
+            <span class="badge bg-success">Active</span>
+        }
+        else
+        {
+            <span class="badge bg-secondary">Inactive</span>
+        }
+    </dd>
+</dl>
+
+<form asp-action="Delete" method="post" id="deleteForm" class="ajax-form">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+        <button type="submit" class="btn btn-danger">
+            <i class="fa-solid fa-trash-can me-1"></i>Delete
+        </button>
+    </div>
+</form>
