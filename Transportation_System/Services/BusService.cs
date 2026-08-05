@@ -35,7 +35,6 @@ public class BusService
         bus.CurrentLatitude = busUpdate.CurrentLatitude;
         bus.CurrentLongitude = busUpdate.CurrentLongitude;
         bus.Speed = busUpdate.Speed;
-        bus.LastUpdate = busUpdate.LastUpdate;
         
         await _dbContext.SaveChangesAsync();
     }

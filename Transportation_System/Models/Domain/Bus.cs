@@ -10,8 +10,10 @@ namespace Transportation_System.Models.Domain;
         [Display(Name = "Bus Number")]
         public string BusNumber { get; set; }
         
-        [Display(Name = "Route Name")]
-        public string BusRouteName { get; set; }
+        [Display(Name = "Route Id")]
+        public int BusRouteId { get; set; }
+        public BusRoute? BusRoute { get; set; }
+        
         
         [Display(Name = "Current Latitude")]
         public double CurrentLatitude { get; set; }

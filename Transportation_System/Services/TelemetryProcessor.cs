@@ -26,6 +26,8 @@ public class TelemetryProcessor
             _logger.LogError("Bus {Bus} is not valid", bus);
             return;
         }
+        
+        bus.LastUpdate = DateTime.UtcNow;
 
         try
         {

@@ -1,43 +1,48 @@
 @model IEnumerable<Transportation_System.Models.Domain.BusStop>
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
 
 @{
+    Layout = "_Layout";
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+@section Scripts {
+    <script src="/js/Site/injectModal.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+}
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
+<h1>Stops</h1>
+
+<table class="table table-striped table-hover">
     <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Latitude)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Longitude)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.WaitingPassengers)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Address)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.BusRoute)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.StopOrder)
-            </th>
-            <th></th>
-        </tr>
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.Name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Latitude)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Longitude)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.WaitingPassengers)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Address)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.BusRoute.Name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.StopOrder)
+        </th>
+        <th></th>
+    </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
+    @foreach (var item in Model) {
         <tr>
             <td>
                 @Html.DisplayFor(modelItem => item.Name)
@@ -61,11 +66,68 @@
                 @Html.DisplayFor(modelItem => item.StopOrder)
             </td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                <i class="fa-solid fa-pen-to-square text-success" style="cursor: pointer;" onclick="openModal('BusStop', @item.Id, 'Edit')"></i>|
+                <i class="fa-solid fa-magnifying-glass" style="cursor: pointer;" onclick="openModal('BusStop', @item.Id, 'Details')"></i> |
+                <i class="fa-solid fa-trash-can text-danger" style="cursor: pointer;" onclick="openModal('BusStop',  @item.Id, 'Delete')"></i>
             </td>
         </tr>
-}
+    }
     </tbody>
 </table>
+
+<button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#createModal">
+    <i class="bi bi-plus-lg"></i> Create Bus
+</button>
+
+<div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Stop</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <partial name="_Create" model="new Transportation_System.Models.Domain.BusStop()" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="DetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Route Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="DetailsModalBody">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="EditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Route Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="EditModalBody">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="DeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Route Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="DeleteModalBody">
+            </div>
+        </div>
+    </div>
+</div>
