@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Transportation_System.DataBase;
 using Transportation_System.Models.Domain;
+using Transportation_System.Models.Dto;
 
 namespace Transportation_System.Services;
 
@@ -23,19 +24,22 @@ public class BusService
         return await  _dbContext.Buses.FindAsync(busId);
     }
 
-    public async Task UpdateBusAsync(Bus busUpdate)
+    public async Task UpdateBusAsync(int busId, BusTelemetryDto telemetry)
     {
-        var bus = await _dbContext.Buses.FindAsync(busUpdate.Id);
+        var bus = await _dbContext.Buses.FindAsync(busId);
 
         if (bus == null)
         {
-            throw new InvalidOperationException($"Bus {busUpdate.Id} does not exists");
+            throw new InvalidOperationException($"Bus {busId} does not exist");
         }
-        
-        bus.CurrentLatitude = busUpdate.CurrentLatitude;
-        bus.CurrentLongitude = busUpdate.CurrentLongitude;
-        bus.Speed = busUpdate.Speed;
-        
+
+        bus.CurrentLatitude = telemetry.CurrentLatitude;
+        bus.CurrentLongitude = telemetry.CurrentLongitude;
+        bus.Speed = telemetry.Speed;
+        bus.PassengerCount = telemetry.PassengerCount;
+        bus.Status = telemetry.Status;
+        bus.LastUpdate = DateTime.UtcNow;
+
         await _dbContext.SaveChangesAsync();
     }
 }
