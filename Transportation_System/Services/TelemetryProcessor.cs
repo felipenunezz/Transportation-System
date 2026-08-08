@@ -1,51 +1,81 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Transportation_System.Hubs;
-using Transportation_System.Models.Domain;
+using Transportation_System.Models.Dto;
 
 namespace Transportation_System.Services;
 
 public class TelemetryProcessor
 {
-    private BusService _BusService;
+    private readonly BusService _busService;
+    private readonly StopService _StopService;
     private readonly IHubContext<BusTrackingHub> _hub;
     private readonly ILogger<TelemetryProcessor> _logger;
 
-    public TelemetryProcessor(BusService busService, IHubContext<BusTrackingHub> hub,  ILogger<TelemetryProcessor> logger)
+    public TelemetryProcessor(
+        BusService busService,
+        StopService StopService,
+        IHubContext<BusTrackingHub> hub,
+        ILogger<TelemetryProcessor> logger)
     {
-        _BusService = busService;
+        _busService = busService;
+        _StopService = StopService;
         _hub = hub;
         _logger = logger;
     }
 
-    public async Task ProcessAsync(Bus bus)
+    public async Task ProcessBusAsync(int busId, BusTelemetryDto telemetry)
     {
-        if (!IsValid(bus))
+        if (!IsValidBus(telemetry))
         {
-            _logger.LogError("Bus {Bus} is not valid", bus);
+            _logger.LogError("Telemetry for bus {BusId} is not valid: {@Telemetry}", busId, telemetry);
             return;
         }
-        
-        bus.LastUpdate = DateTime.UtcNow;
 
         try
         {
-            await _BusService.UpdateBusAsync(bus);
+            await _busService.UpdateBusAsync(busId, telemetry);
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error handling MQTT Message on {Bus}", bus);
+            _logger.LogError(e, "Error saving telemetry for bus {BusId}", busId);
             return;
         }
-        await _hub.Clients.All.SendAsync("BusUpdated", bus);
+
+        await _hub.Clients.All.SendAsync("BusUpdated", busId);
     }
 
-    private static bool IsValid(Bus bus)
+    public async Task ProcessStopAsync(int stopId, BusStopOccupancyDto occupancy)
     {
-        if (bus.CurrentLatitude is < -90 or > 90) return false;
-        if (bus.CurrentLongitude is < -180 or > 180) return false;
-        if (bus.CurrentLatitude is 0 && bus.CurrentLongitude is 0) return false;
+        if (!IsValidStop(occupancy))
+        {
+            _logger.LogError("Occupancy for stop {StopId} is not valid: {@Occupancy}", stopId, occupancy);
+            return;
+        }
+
+        try
+        {
+            await _StopService.UpdateStopAsync(stopId, occupancy);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error saving occupancy for stop {StopId}", stopId);
+            return;
+        }
+
+        await _hub.Clients.All.SendAsync("BusStopUpdated", stopId);
+    }
+
+    private static bool IsValidBus(BusTelemetryDto t)
+    {
+        if (t.CurrentLatitude is < -90 or > 90) return false;
+        if (t.CurrentLongitude is < -180 or > 180) return false;
+        if (t.CurrentLatitude is 0 && t.CurrentLongitude is 0) return false;
+        if (t.PassengerCount < 0) return false;
         return true;
+    }
+
+    private static bool IsValidStop(BusStopOccupancyDto o)
+    {
+        return o.WaitingPassengers >= 0;
     }
 }
