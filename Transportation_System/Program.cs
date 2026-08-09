@@ -18,6 +18,7 @@ builder.Services.AddDbContext<BusDbContext>(options =>
                 errorCodesToAdd: null)));
 builder.Services.AddSignalR();
 builder.Services.AddScoped<BusService>();
+builder.Services.AddScoped<StopService>();
 builder.Services.AddScoped<TelemetryProcessor>();
 builder.Services.AddHostedService<MqttService>();
 
