@@ -19,11 +19,23 @@ document.addEventListener('submit', function(e) {
         body: new FormData(form),
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
-        .then(response => {
+        .then(async response => {
             if (response.redirected) {
                 window.location.href = response.url;
                 return null;
             }
+
+            if (!response.ok) {
+                let message = 'Something went wrong. Please try again.';
+                try {
+                    const data = await response.json();
+                    if (data && data.message) message = data.message;
+                } catch {
+                }
+                showModalError(form, message);
+                return null;
+            }
+
             return response.text();
         })
         .then(html => {
@@ -38,3 +50,16 @@ document.addEventListener('submit', function(e) {
             }
         });
 });
+
+function showModalError(form, message) {
+    const modalBody = form.closest('.modal-body');
+    if (!modalBody) return;
+
+    let alertBox = modalBody.querySelector('.ajax-form-error');
+    if (!alertBox) {
+        alertBox = document.createElement('div');
+        alertBox.className = 'alert alert-danger ajax-form-error';
+        modalBody.prepend(alertBox);
+    }
+    alertBox.textContent = message;
+}

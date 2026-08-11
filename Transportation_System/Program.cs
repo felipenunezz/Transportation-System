@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Transportation_System.DataBase;
+using Transportation_System.Data;
 using Transportation_System.Hubs;
 using Transportation_System.MQTT;
 using Transportation_System.Services;
@@ -44,7 +44,10 @@ app.MapHub<BusTrackingHub>("/busHub");
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<BusDbContext>();
+    var dataSeed = new DataSeed();
     dbContext.Database.EnsureCreated();
+    await dbContext.Database.MigrateAsync();
+    await dataSeed.SeedAsync(dbContext);
 }
 
 app.Run();

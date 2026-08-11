@@ -107,7 +107,7 @@ public class MqttService : BackgroundService
                     await HandleBusTelemetry(processor, entityId, payload, topic);
                     break;
 
-                case ("busstops", "occupancy"):
+                case ("stops", "occupancy"):
                     await HandleStopTelemetry(processor, entityId, payload, topic);
                     break;
 
@@ -150,6 +150,7 @@ public class MqttService : BackgroundService
         if (dto is null)
         {
             _logger.LogWarning("Could not parse payload on {Topic}: {Payload}", topic, payload);
+            return;
         }
 
         await processor.ProcessStopAsync(stopId, dto);
