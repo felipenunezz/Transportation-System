@@ -32,7 +32,14 @@ connection.on("BusLocationUpdated", (data) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    const stops = JSON.parse('@Html.Raw(Json.Serialize(ViewBag.BusStops))');
+   
+    document.addEventListener('DOMContentLoaded', () => {
+        const stops = window.__dashboardData?.busStops || [];
+        stops.forEach(stop => {
+            addStopMarker(stop.id, stop.name, stop.latitude, stop.longitude);
+        });
+    });
+    
     stops.forEach(stop => {
         addStopMarker(stop.id, stop.name, stop.latitude, stop.longitude);
     });

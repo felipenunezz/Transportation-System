@@ -23,12 +23,27 @@ namespace Transportation_System.Models.Domain;
         [Display(Name = "Address")]
         public string Address { get; set; }
         
-        // Foreign key
         [Display(Name = "Route")]
         public int? BusRouteId { get; set; }
         [JsonIgnore]
         public BusRoute? BusRoute { get; set; }
         
-        [Display(Name = "Stop Order")]
-        public int StopOrder { get; set; }
+        [Display(Name = "Stop Type")]
+        public StopType Type { get; set; } = StopType.RouteStop;
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (Type != StopType.Hub && BusRouteId == null)
+            {
+                yield return new ValidationResult(
+                    "Please select a route.",
+                    new[] { nameof(BusRouteId) });
+            }
+        }
+    }
+
+    public enum StopType
+    {
+        RouteStop,
+        Hub
     }

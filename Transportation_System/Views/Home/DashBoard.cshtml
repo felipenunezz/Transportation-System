@@ -67,6 +67,11 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        window.__dashboardData = {
+            busStops: @Html.Raw(Json.Serialize(ViewBag.BusStops))
+        };
+    </script>
     <script src="/js/map.js"></script>
     <script src="/js/dashboard.js"></script>
 }

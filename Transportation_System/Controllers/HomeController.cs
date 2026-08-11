@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Transportation_System.DataBase;
+using Transportation_System.Data;
 using Transportation_System.Models.Domain;
 
 namespace Transportation_System.Controllers;
@@ -17,11 +17,12 @@ public class HomeController : Controller
     public async Task<IActionResult> Dashboard()
     {
         var activeBuses = await _context.Buses
+            .Include(b => b.BusRoute)
             .Where(b => b.Status != BusStatus.OutOfService)
             .ToListAsync();
                 
         var busStops = await _context.BusStops.ToListAsync();
-        var routes = await _context.BusRoutes.Include(r => r.Stops).ToListAsync();
+        var routes = await _context.BusRoutes.ToListAsync();
             
         ViewBag.ActiveBuses = activeBuses;
         ViewBag.BusStops = busStops;
@@ -34,51 +35,53 @@ public class HomeController : Controller
     {
         return RedirectToAction("Dashboard");
     }
-
-    // API endpoint for map data
+    
     [HttpGet("/api/mapdata")]
     public async Task<IActionResult> GetMapData()
     {
-        var data = new
-        {
-            buses = await _context.Buses
-                .Where(b => b.Status != BusStatus.OutOfService)
-                .Select(b => new
-                {
-                    id = b.Id,
-                    busNumber = b.BusNumber,
-                    routeName = b.BusRouteId,
-                    currentLatitude = b.CurrentLatitude,
-                    currentLongitude = b.CurrentLongitude,
-                    speed = b.Speed,
-                    passengerCount = b.PassengerCount,
-                    status = b.Status.ToString()
-                }).ToListAsync(),
-            
-            stops = await _context.BusStops.Select(s => new
+        var buses = await _context.Buses
+            .Where(b => b.Status != BusStatus.OutOfService)
+            .Select(b => new
             {
-                id = s.Id,
-                name = s.Name,
-                latitude = s.Latitude,
-                longitude = s.Longitude,
-                waitingPassengers = s.WaitingPassengers
-            }).ToListAsync(),
-            
-            routes = await _context.BusRoutes
-                .Include(r => r.Stops.OrderBy(s => s.StopOrder))
-                .Select(r => new
-                {
-                    id = r.Id,
-                    name = r.Name,
-                    stops = r.Stops.Select(s => new
-                    {
-                        latitude = s.Latitude,
-                        longitude = s.Longitude,
-                        stopOrder = s.StopOrder
-                    })
-                }).ToListAsync()
-        };
+                id = b.Id,
+                busNumber = b.BusNumber,
+                routeName = b.BusRoute != null ? b.BusRoute.Name : null,
+                currentLatitude = b.CurrentLatitude,
+                currentLongitude = b.CurrentLongitude,
+                speed = b.Speed,
+                passengerCount = b.PassengerCount,
+                status = b.Status.ToString()
+            }).ToListAsync();
+
+        var stops = await _context.BusStops.Select(s => new
+        {
+            id = s.Id,
+            name = s.Name,
+            latitude = s.Latitude,
+            longitude = s.Longitude,
+            waitingPassengers = s.WaitingPassengers
+        }).ToListAsync();
         
-        return Json(data);
+        var routesRaw = await _context.BusRoutes.ToListAsync();
+
+        var referencedStopIds = routesRaw.SelectMany(r => r.RouteStops).Distinct().ToList();
+        var stopsById = await _context.BusStops
+            .Where(s => referencedStopIds.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id);
+
+        var routes = routesRaw.Select(r => new
+        {
+            id = r.Id,
+            name = r.Name,
+            stops = r.RouteStops
+                .Where(stopId => stopsById.ContainsKey(stopId)) // guards against a stale id left in the queue
+                .Select(stopId => new
+                {
+                    latitude = stopsById[stopId].Latitude,
+                    longitude = stopsById[stopId].Longitude
+                })
+        }).ToList();
+
+        return Json(new { buses, stops, routes });
     }
 }

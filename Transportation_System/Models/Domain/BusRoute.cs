@@ -17,7 +17,7 @@ namespace Transportation_System.Models.Domain;
         [Display(Name = "Active")]
         public bool IsActive { get; set; }
         
-        // Navigation property
-        [JsonIgnore]
-        public List<BusStop> Stops { get; set; } = new List<BusStop>();
+        [Display(Name = "Route Stops")]
+        public List<int> RouteStops { get; set; } = [];
+        public ICollection<BusStop> Stops { get; set; } = new List<BusStop>();
     }

@@ -1,148 +1,170 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Transportation_System.DataBase;
+using Transportation_System.Data;
 using Transportation_System.Models.Domain;
 
-namespace Transportation_System.Controllers
+public class BusRouteController(BusDbContext context, ILogger<BusRouteController> logger) : Controller
 {
-    public class BusRouteController : Controller
+    private readonly ILogger<BusRouteController> _logger = logger;
+
+    public async Task<IActionResult> Index()
     {
-        private readonly BusDbContext _context;
-        private readonly ILogger<BusRouteController> _logger;
+        return View(await context.BusRoutes.ToListAsync());
+    }
 
-        public BusRouteController(BusDbContext context , ILogger<BusRouteController> logger)
-        {
-            _logger = logger;
-            _context = context;
-        }
-        
-        public async Task<IActionResult> Index()
-        {
-            return View(await _context.BusRoutes.ToListAsync());
-        }
-        
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+    public async Task<IActionResult> Details(int? id)
+    {
+        if (id == null) return NotFound();
 
-            var busRoute = await _context.BusRoutes
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (busRoute == null)
-            {
-                return NotFound();
-            }
+        var busRoute = await context.BusRoutes
+            .FirstOrDefaultAsync(m => m.Id == id);
+        if (busRoute == null) return NotFound();
 
-            return View("_Details", busRoute);
-        }
-        
-        public IActionResult Create()
-        {
-            return PartialView("_Create", new BusRoute());
-        }
-        
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Description,IsActive")] BusRoute busRoute)
-        {
-            if (!ModelState.IsValid)
-            {
-                return PartialView("_Create", busRoute);
-            }
+        return View("_Details", busRoute);
+    }
 
-            _context.Add(busRoute);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-        
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+    public IActionResult Create()
+    {
+        return PartialView("_Create", new BusRoute());
+    }
 
-            var busRoute = await _context.BusRoutes.FindAsync(id);
-            if (busRoute == null)
-            {
-                return NotFound();
-            }
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind("Name,Description,IsActive")] BusRoute busRoute)
+    {
+        if (!ModelState.IsValid) return PartialView("_Create", busRoute);
+
+        busRoute.RouteStops = []; // Initialize empty list
+        context.Add(busRoute);
+        await context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> Edit(int? id)
+    {
+        if (id == null) return NotFound();
+
+        var busRoute = await context.BusRoutes.FindAsync(id);
+        if (busRoute == null) return NotFound();
+
+        await PopulateOrderedStopsViewBagAsync(busRoute);
+        return View("_Edit", busRoute);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(
+        int id,
+        [Bind("Id,Name,Description,IsActive,RouteStops")]
+        BusRoute busRoute,
+        List<int> deletedStopId)
+    {
+        if (id != busRoute.Id) return NotFound();
+
+        if (!ModelState.IsValid)
+        {
+            await PopulateOrderedStopsViewBagAsync(busRoute);
             return View("_Edit", busRoute);
         }
-        
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,IsActive")] BusRoute busRoute)
+
+        var existingRoute = await context.BusRoutes
+            .Include(r => r.Stops)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (existingRoute == null) return NotFound();
+
+        existingRoute.Name = busRoute.Name;
+        existingRoute.Description = busRoute.Description;
+        existingRoute.IsActive = busRoute.IsActive;
+        existingRoute.RouteStops = busRoute.RouteStops ?? [];
+
+        if (deletedStopId != null && deletedStopId.Any())
         {
-            if (id != busRoute.Id)
+            var otherRoutes = await context.BusRoutes
+                .Where(r => r.Id != id && r.RouteStops.Any(deletedStopId.Contains))
+                .ToListAsync();
+
+            foreach (var route in otherRoutes)
             {
-                return NotFound();
+                route.RouteStops.RemoveAll(deletedStopId.Contains);
             }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(busRoute);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!BusRouteExists(busRoute.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View("_Edit", busRoute);
+            var stopsToDelete = await context.BusStops
+                .Where(s => deletedStopId.Contains(s.Id))
+                .ToListAsync();
+
+            context.BusStops.RemoveRange(stopsToDelete);
         }
-        
-        public async Task<IActionResult> Delete(int? id)
+
+        try
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var busRoute = await _context.BusRoutes
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (busRoute == null)
-            {
-                return NotFound();
-            }
-
-            return View("_Delete",busRoute);
+            await context.SaveChangesAsync();
         }
-        
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        catch (DbUpdateConcurrencyException)
         {
-            var busRoute = await _context.BusRoutes.FindAsync(id);
-            if (busRoute != null)
-            {
-                _context.BusRoutes.Remove(busRoute);
-            }
+            if (!BusRouteExists(busRoute.Id)) return NotFound();
+            throw;
+        }
 
-            await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> Delete(int? id)
+    {
+        if (id == null) return NotFound();
+
+        var busRoute = await context.BusRoutes
+            .FirstOrDefaultAsync(m => m.Id == id);
+        if (busRoute == null) return NotFound();
+
+        return View("_Delete", busRoute);
+    }
+
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var busRoute = await context.BusRoutes.FindAsync(id);
+        if (busRoute == null) return RedirectToAction(nameof(Index));
+
+        context.BusRoutes.Remove(busRoute);
+        try
+        {
+            await context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
-
-        private bool BusRouteExists(int id)
+        catch (DbUpdateException ex)
         {
-            return _context.BusRoutes.Any(e => e.Id == id);
+            _logger.LogError(ex, "Failed to delete BusRoute {Id}", id);
+            return Conflict(new
+            {
+                message =
+                    "This route cannot be deleted because it still has buses or stops assigned to it. Reassign or remove them first."
+            });
+        }
+    }
+
+    private bool BusRouteExists(int id)
+    {
+        return context.BusRoutes.Any(e => e.Id == id);
+    }
+
+    private async Task PopulateOrderedStopsViewBagAsync(BusRoute busRoute)
+    {
+        if (busRoute.RouteStops?.Any() == true)
+        {
+            var stopsById = await context.BusStops
+                .Where(s => busRoute.RouteStops.Contains(s.Id))
+                .ToDictionaryAsync(s => s.Id);
+
+            ViewBag.OrderedStops = busRoute.RouteStops
+                .Where(stopId => stopsById.ContainsKey(stopId))
+                .Select(stopId => stopsById[stopId])
+                .ToList();
+        }
+        else
+        {
+            ViewBag.OrderedStops = new List<BusStop>();
         }
     }
 }
