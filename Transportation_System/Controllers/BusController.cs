@@ -41,7 +41,7 @@ namespace Transportation_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("BusNumber,BusRouteId,CurrentLatitude,CurrentLongitude,Speed,PassengerCount,Status")] Bus bus)
+        public async Task<IActionResult> Create([Bind("BusNumber,BusRouteId,Speed,PassengerCount,Status")] Bus bus)
         {
             if (ModelState.IsValid)
             {
@@ -75,7 +75,7 @@ namespace Transportation_System.Controllers
         
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,BusNumber,BusRouteId,CurrentLatitude,CurrentLongitude,Speed,PassengerCount,Status")] Bus bus)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,BusNumber,CurrentLongitude,Speed,PassengerCount,Status")] Bus bus)
         {
             if (id != bus.Id) return NotFound();
 

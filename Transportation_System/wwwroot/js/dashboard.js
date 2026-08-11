@@ -1,5 +1,4 @@
-﻿
-const connection = new signalR.HubConnectionBuilder()
+﻿const connection = new signalR.HubConnectionBuilder()
     .withUrl("/busHub")
     .configureLogging(signalR.LogLevel.Information)
     .build();
@@ -13,7 +12,7 @@ connection.start().then(() => {
 
 connection.on("BusLocationUpdated", (data) => {
     console.log("Bus update received:", data);
-    
+
     updateBusMarker(
         data.busId,
         data.latitude,
@@ -21,7 +20,7 @@ connection.on("BusLocationUpdated", (data) => {
         `BUS-${data.busId.toString().padStart(3, '0')}`,
         data.speed
     );
-    
+
     const busCard = document.querySelector(`.bus-card[data-bus-id="${data.busId}"]`);
     if (busCard) {
         const speedElement = busCard.querySelector('.speed');
@@ -32,14 +31,7 @@ connection.on("BusLocationUpdated", (data) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-   
-    document.addEventListener('DOMContentLoaded', () => {
-        const stops = window.__dashboardData?.busStops || [];
-        stops.forEach(stop => {
-            addStopMarker(stop.id, stop.name, stop.latitude, stop.longitude);
-        });
-    });
-    
+    const stops = window.__dashboardData?.busStops || [];
     stops.forEach(stop => {
         addStopMarker(stop.id, stop.name, stop.latitude, stop.longitude);
     });
