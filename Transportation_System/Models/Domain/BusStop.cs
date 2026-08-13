@@ -3,12 +3,13 @@ using System.Text.Json.Serialization;
 
 namespace Transportation_System.Models.Domain;
 
-    public class BusStop
+    public class BusStop : IValidatableObject
     {
         public int Id { get; set; }
         
         [Required]
         [Display(Name = "Stop Name")]
+        [MaxLength(50)]
         public string Name { get; set; }
         
         [Display(Name = "Latitude")]
@@ -21,6 +22,7 @@ namespace Transportation_System.Models.Domain;
         public int WaitingPassengers { get; set; }
         
         [Display(Name = "Address")]
+        [MaxLength(50)]
         public string Address { get; set; }
         
         [Display(Name = "Route")]

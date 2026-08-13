@@ -11,38 +11,33 @@ document.addEventListener('click', async (e) => {
 
     const queue = document.getElementById('stopQueue');
     if (!queue) return;
-
-    const routeId = queue.dataset.routeId;
-    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    
+    document.querySelector('input[name="__RequestVerificationToken"]')?.value;
     if (btn.classList.contains('move-up')) {
         const prev = li.previousElementSibling;
-        
+
         if (prev && prev.dataset.stopId) {
             queue.insertBefore(li, prev);
             updateButtonStates();
             syncInputs();
         }
-    }
+    } else {
+        if (btn.classList.contains('move-down')) {
+            const next = li.nextElementSibling;
 
-    else if (btn.classList.contains('move-down')) {
-        const next = li.nextElementSibling;
-        
-        if (next && next.dataset.stopId) {
-            queue.insertBefore(next, li);
-            updateButtonStates();
-            syncInputs();
-        }
-    }
-
-    else if (btn.classList.contains('remove-stop')) {
+            if (next && next.dataset.stopId) {
+                queue.insertBefore(next, li);
+                updateButtonStates();
+                syncInputs();
+            }
+        } else if (btn.classList.contains('remove-stop')) {
             const stopId = li.dataset.stopId;
             if (!confirm('Remove this stop from the route?')) return;
-            
+
             deleteStop(stopId);
             li.remove();
             updateButtonStates();
             syncInputs();
+        }
     }
 });
 

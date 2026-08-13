@@ -2,13 +2,13 @@
 
 namespace Transportation_System.Models.Domain;
 
-    public class Bus
-    {
+    public class Bus {
         public int Id { get; set; }
         
         [Required]
         [Display(Name = "Bus Number")]
-        public string BusNumber { get; set; }
+        [MaxLength(10)]
+        public string? BusNumber { get; set; }
         
         [Display(Name = "Route Id")]
         public int BusRouteId { get; set; }
@@ -33,8 +33,7 @@ namespace Transportation_System.Models.Domain;
         public DateTime LastUpdate { get; set; }
     }
     
-    public enum BusStatus
-    {
+    public enum BusStatus {
         OnRoute,
         AtStop,
         OutOfService,

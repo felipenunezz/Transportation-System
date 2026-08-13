@@ -1,12 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Transportation_System.Models.Domain;
 
 namespace Transportation_System.Data;
 
-public class BusDbContext : DbContext
+public class BusDbContext(DbContextOptions<BusDbContext> options) : DbContext(options)
 {
-    public BusDbContext(DbContextOptions<BusDbContext> options) : base(options){}
-        
     public DbSet<Bus> Buses { get; set; }
     public DbSet<BusStop> BusStops { get; set; }
     public DbSet<BusRoute> BusRoutes { get; set; }
@@ -29,9 +28,13 @@ public class BusDbContext : DbContext
             .ToTable(t => t.HasCheckConstraint(
                 "CK_BusStop_RouteRequired", "\"Type\" = 'Hub' OR \"BusRouteId\" IS NOT NULL"
                 ));
-        
+
         modelBuilder.Entity<BusRoute>()
             .Property(r => r.RouteStops)
-            .HasColumnType("integer[]");
+            .HasColumnType("integer[]")
+            .Metadata.SetValueComparer(new ValueComparer<List<int>>(
+                (a, b) => a!.SequenceEqual(b!),
+                v => v.Aggregate(0, (h, x) => HashCode.Combine(h, x)),
+                v => v.ToList()));
     }
 }

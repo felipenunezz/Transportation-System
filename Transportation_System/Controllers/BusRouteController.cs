@@ -3,17 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Transportation_System.Data;
 using Transportation_System.Models.Domain;
 
-public class BusRouteController(BusDbContext context, ILogger<BusRouteController> logger) : Controller
-{
-    private readonly ILogger<BusRouteController> _logger = logger;
+namespace Transportation_System.Controllers;
 
-    public async Task<IActionResult> Index()
-    {
-        return View(await context.BusRoutes.ToListAsync());
-    }
+public class BusRouteController(BusDbContext context, ILogger<BusRouteController> logger) : Controller {
 
-    public async Task<IActionResult> Details(int? id)
-    {
+    public async Task<IActionResult> Index() { return View(await context.BusRoutes.ToListAsync()); }
+
+    public async Task<IActionResult> Details(int? id) {
         if (id == null) return NotFound();
 
         var busRoute = await context.BusRoutes
@@ -23,25 +19,22 @@ public class BusRouteController(BusDbContext context, ILogger<BusRouteController
         return View("_Details", busRoute);
     }
 
-    public IActionResult Create()
-    {
+    public IActionResult Create() {
         return PartialView("_Create", new BusRoute());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Name,Description,IsActive")] BusRoute busRoute)
-    {
+    public async Task<IActionResult> Create([Bind("Name,Description,IsActive")] BusRoute busRoute) {
         if (!ModelState.IsValid) return PartialView("_Create", busRoute);
 
-        busRoute.RouteStops = []; // Initialize empty list
+        busRoute.RouteStops = [];
         context.Add(busRoute);
         await context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
 
-    public async Task<IActionResult> Edit(int? id)
-    {
+    public async Task<IActionResult> Edit(int? id) {
         if (id == null) return NotFound();
 
         var busRoute = await context.BusRoutes.FindAsync(id);
@@ -57,7 +50,7 @@ public class BusRouteController(BusDbContext context, ILogger<BusRouteController
         int id,
         [Bind("Id,Name,Description,IsActive,RouteStops")]
         BusRoute busRoute,
-        List<int> deletedStopId)
+        List<int>? deletedStopId)
     {
         if (id != busRoute.Id) return NotFound();
 
@@ -80,11 +73,17 @@ public class BusRouteController(BusDbContext context, ILogger<BusRouteController
 
         if (deletedStopId != null && deletedStopId.Any())
         {
+            // Materialize other routes first — Npgsql/EF Core can't translate an
+            // array-column-overlaps-client-list check into SQL, so filter in memory.
             var otherRoutes = await context.BusRoutes
-                .Where(r => r.Id != id && r.RouteStops.Any(deletedStopId.Contains))
+                .Where(r => r.Id != id)
                 .ToListAsync();
 
-            foreach (var route in otherRoutes)
+            var affectedRoutes = otherRoutes
+                .Where(r => r.RouteStops.Any(deletedStopId.Contains))
+                .ToList();
+
+            foreach (var route in affectedRoutes)
             {
                 route.RouteStops.RemoveAll(deletedStopId.Contains);
             }
@@ -135,7 +134,7 @@ public class BusRouteController(BusDbContext context, ILogger<BusRouteController
         }
         catch (DbUpdateException ex)
         {
-            _logger.LogError(ex, "Failed to delete BusRoute {Id}", id);
+            logger.LogError(ex, "Failed to delete BusRoute {Id}", id);
             return Conflict(new
             {
                 message =
@@ -144,15 +143,10 @@ public class BusRouteController(BusDbContext context, ILogger<BusRouteController
         }
     }
 
-    private bool BusRouteExists(int id)
-    {
-        return context.BusRoutes.Any(e => e.Id == id);
-    }
+    private bool BusRouteExists(int id) { return context.BusRoutes.Any(e => e.Id == id); }
 
-    private async Task PopulateOrderedStopsViewBagAsync(BusRoute busRoute)
-    {
-        if (busRoute.RouteStops?.Any() == true)
-        {
+    private async Task PopulateOrderedStopsViewBagAsync(BusRoute busRoute) {
+        if (busRoute.RouteStops?.Any() == true) {
             var stopsById = await context.BusStops
                 .Where(s => busRoute.RouteStops.Contains(s.Id))
                 .ToDictionaryAsync(s => s.Id);
@@ -162,8 +156,7 @@ public class BusRouteController(BusDbContext context, ILogger<BusRouteController
                 .Select(stopId => stopsById[stopId])
                 .ToList();
         }
-        else
-        {
+        else {
             ViewBag.OrderedStops = new List<BusStop>();
         }
     }
