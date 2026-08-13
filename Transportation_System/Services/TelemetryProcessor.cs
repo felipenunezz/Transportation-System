@@ -4,65 +4,40 @@ using Transportation_System.Models.Dto;
 
 namespace Transportation_System.Services;
 
-public class TelemetryProcessor
+public class TelemetryProcessor(
+    BusService busService,
+    StopService stopService,
+    IHubContext<BusTrackingHub> hub,
+    ILogger<TelemetryProcessor> logger)
 {
-    private readonly BusService _busService;
-    private readonly StopService _StopService;
-    private readonly IHubContext<BusTrackingHub> _hub;
-    private readonly ILogger<TelemetryProcessor> _logger;
+    public async Task ProcessBusAsync(int busId, BusTelemetryDto telemetry) {
+        if (!IsValidBus(telemetry)) {
+            logger.LogError("Telemetry for bus {BusId} is not valid: {@Telemetry}", busId, telemetry);
+            return;
+        }
 
-    public TelemetryProcessor(
-        BusService busService,
-        StopService StopService,
-        IHubContext<BusTrackingHub> hub,
-        ILogger<TelemetryProcessor> logger)
-    {
-        _busService = busService;
-        _StopService = StopService;
-        _hub = hub;
-        _logger = logger;
+        try { await busService.UpdateBusAsync(busId, telemetry); }
+        catch (Exception e) {
+            logger.LogError(e, "Error saving telemetry for bus {BusId}", busId);
+            return;
+        }
+
+        await hub.Clients.All.SendAsync("BusUpdated", busId);
     }
 
-    public async Task ProcessBusAsync(int busId, BusTelemetryDto telemetry)
-    {
-        if (!IsValidBus(telemetry))
-        {
-            _logger.LogError("Telemetry for bus {BusId} is not valid: {@Telemetry}", busId, telemetry);
+    public async Task ProcessStopAsync(int stopId, BusStopOccupancyDto occupancy) {
+        if (!IsValidStop(occupancy)) {
+            logger.LogError("Occupancy for stop {StopId} is not valid: {@Occupancy}", stopId, occupancy);
             return;
         }
 
-        try
-        {
-            await _busService.UpdateBusAsync(busId, telemetry);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Error saving telemetry for bus {BusId}", busId);
+        try { await stopService.UpdateStopAsync(stopId, occupancy); }
+        catch (Exception e) {
+            logger.LogError(e, "Error saving occupancy for stop {StopId}", stopId);
             return;
         }
 
-        await _hub.Clients.All.SendAsync("BusUpdated", busId);
-    }
-
-    public async Task ProcessStopAsync(int stopId, BusStopOccupancyDto occupancy)
-    {
-        if (!IsValidStop(occupancy))
-        {
-            _logger.LogError("Occupancy for stop {StopId} is not valid: {@Occupancy}", stopId, occupancy);
-            return;
-        }
-
-        try
-        {
-            await _StopService.UpdateStopAsync(stopId, occupancy);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Error saving occupancy for stop {StopId}", stopId);
-            return;
-        }
-
-        await _hub.Clients.All.SendAsync("BusStopUpdated", stopId);
+        await hub.Clients.All.SendAsync("BusStopUpdated", stopId);
     }
 
     private static bool IsValidBus(BusTelemetryDto t)

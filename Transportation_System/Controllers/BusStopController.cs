@@ -1,27 +1,20 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Transportation_System.Data;
 using Transportation_System.Models.Domain;
 
-namespace Transportation_System.Controllers
-{
-    public class BusStopController(BusDbContext context, ILogger<BusStopController> logger) : Controller
-    {
-        public async Task<IActionResult> Index()
-        {
+namespace Transportation_System.Controllers {
+    public class BusStopController(BusDbContext context, ILogger<BusStopController> logger) : Controller {
+        public async Task<IActionResult> Index() {
             ViewData["BusRouteId"] = new SelectList(context.BusRoutes, "Id", "Name");
             return View(await context.BusStops
                 .Include(b => b.BusRoute)
                 .ToListAsync());
         }
         
-        public async Task<IActionResult> Details(int? id)
-        {
+        public async Task<IActionResult> Details(int? id) {
             if (id == null) return NotFound();
 
             var busStop = await context.BusStops
@@ -32,33 +25,35 @@ namespace Transportation_System.Controllers
             return View("_Details", busStop);
         }
         
-        public IActionResult Create()
-        {
+        public IActionResult Create() {
             ViewData["BusRouteId"] = new SelectList(context.BusRoutes, "Id", "Name");
             return PartialView("_Create", new BusStop());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Latitude,Longitude,WaitingPassengers,Address,BusRouteId")] BusStop busStop)
-        {
-            if (ModelState.IsValid)
-            {
+        public async Task<IActionResult> Create([Bind("Name,Latitude,Longitude,WaitingPassengers,Address,BusRouteId")] BusStop busStop) {
+            if (ModelState.IsValid) {
                 context.Add(busStop);
 
-                try
-                {
+                try {
                     busStop.Type = StopType.RouteStop;
                     await context.SaveChangesAsync();
-                    
+
                     var route = await context.BusRoutes.FindAsync(busStop.BusRouteId);
-                    route!.RouteStops.Add(busStop.Id);
+                    if (route == null) {
+                        logger.LogWarning("Route {RouteId} not found when linking new BusStop {StopId}", busStop.BusRouteId, busStop.Id);
+                        ModelState.AddModelError(nameof(busStop.BusRouteId), "Selected route no longer exists. Please choose a valid route.");
+                        ViewData["BusRouteId"] = new SelectList(context.BusRoutes, "Id", "Name", busStop.BusRouteId);
+                        return PartialView("_Create", busStop);
+                    }
+
+                    route.RouteStops.Add(busStop.Id);
                     await context.SaveChangesAsync();
 
                     return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateException ex)
-                {
+                catch (DbUpdateException ex) {
                     logger.LogError(ex, "Failed to save BusStop {@BusStop}", busStop);
                     ModelState.AddModelError(nameof(busStop.BusRouteId), "Selected route no longer exists. Please choose a valid route.");
                 }
@@ -67,8 +62,7 @@ namespace Transportation_System.Controllers
             return PartialView("_Create", busStop);
         }
         
-        public async Task<IActionResult> Edit(int? id)
-        {
+        public async Task<IActionResult> Edit(int? id) {
             if (id == null) return NotFound();
 
             var busStop = await context.BusStops.FindAsync(id);
@@ -79,30 +73,35 @@ namespace Transportation_System.Controllers
         
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Latitude,Longitude,WaitingPassengers,Address,BusRouteId,Type")] BusStop busStop)
-        {
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Latitude,Longitude,WaitingPassengers,Address,BusRouteId,Type")] BusStop busStop) {
             if (id != busStop.Id) return NotFound();
 
-            if (ModelState.IsValid)
-            {
-                var existing = await context.BusStops.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+            var existing = await context.BusStops.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+            if (existing == null) return NotFound();
 
-                if (existing != null && existing.BusRouteId != busStop.BusRouteId)
+            if (existing.Type != busStop.Type) return Forbid();   // block actual type changes, not re-saves
+
+            if (ModelState.IsValid) {
+                if (existing.BusRouteId != busStop.BusRouteId)
                 {
-                    var oldRoute = await context.BusRoutes.FindAsync(existing.BusRouteId);
-                    oldRoute?.RouteStops.Remove(id);
+                    if (existing.BusRouteId is { } oldRouteId)
+                    {
+                        var oldRoute = await context.BusRoutes.FindAsync(oldRouteId);
+                        oldRoute?.RouteStops.Remove(id);
+                    }
 
-                    var newRoute = await context.BusRoutes.FindAsync(busStop.BusRouteId);
-                    newRoute?.RouteStops.Add(id);
+                    if (busStop.BusRouteId is { } newRouteId)   // <-- fixed: reads the POSTED value
+                    {
+                        var newRoute = await context.BusRoutes.FindAsync(newRouteId);
+                        newRoute?.RouteStops.Add(id);
+                    }
                 }
 
-                try
-                {
+                try {
                     context.Update(busStop);
                     await context.SaveChangesAsync();
                 }
-                catch (DbUpdateConcurrencyException)
-                {
+                catch (DbUpdateConcurrencyException) {
                     if (!BusStopExists(busStop.Id)) return NotFound();
                     throw;
                 }
@@ -112,8 +111,7 @@ namespace Transportation_System.Controllers
             return View("_Edit", busStop);
         }
         
-        public async Task<IActionResult> Delete(int? id)
-        {
+        public async Task<IActionResult> Delete(int? id) {
             if (id == null) return NotFound();
 
             var busStop = await context.BusStops
@@ -126,11 +124,9 @@ namespace Transportation_System.Controllers
         
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
+        public async Task<IActionResult> DeleteConfirmed(int id) {
             var busStop = await context.BusStops.FindAsync(id);
-            if (busStop != null)
-            {
+            if (busStop != null) {
                 var route = await context.BusRoutes.FindAsync(busStop.BusRouteId);
                 route?.RouteStops.Remove(id);
                 context.BusStops.Remove(busStop);
@@ -139,9 +135,6 @@ namespace Transportation_System.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool BusStopExists(int id)
-        {
-            return context.BusStops.Any(e => e.Id == id);
-        }
+        private bool BusStopExists(int id) { return context.BusStops.Any(e => e.Id == id); }
     }
 }

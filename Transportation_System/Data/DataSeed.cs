@@ -2,16 +2,12 @@
 using Transportation_System.Models.Domain;
 namespace Transportation_System.Data;
 
-public class DataSeed
-{
-    public async Task SeedAsync(BusDbContext context)
-    {
+public class DataSeed {
+    public async Task SeedAsync(BusDbContext context) {
         if  (await context.BusStops.AnyAsync()) return;
         
-        var centralStations = new List<BusStop>
-        {
-            new()
-            {
+        var centralStations = new List<BusStop> {
+            new() {
                 Name = "NPAT bus depot #2",
                 Address = "Marshala Rokossovskogo Street, 2А",
                 Latitude = 56.281711,
@@ -20,8 +16,7 @@ public class DataSeed
                 BusRouteId = null,
                 Type = StopType.Hub
             },
-            new()
-            {
+            new() {
                 Name = "NPAT bus depot #1",
                 Address = "Udmurtskaya Street, 40",
                 Latitude = 56.290469,

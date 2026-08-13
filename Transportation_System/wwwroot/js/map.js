@@ -17,20 +17,20 @@ const stopIcon = L.divIcon({
     className: 'stop-icon'
 });
 
-function updateBusMarker(busId, latitude, longitude, busNumber, speed, passengers) {
-    const latLng = [latitude, longitude];
+function updateBusMarker(bus) {
+    const latLng = [bus.currentLatitude, bus.currentLongitude];
 
-    if (busMarkers.has(busId)) {
-        busMarkers.get(busId).setLatLng(latLng);
+    if (busMarkers.has(bus.id)) {
+        busMarkers.get(bus.id).setLatLng(latLng);
     } else {
         const marker = L.marker(latLng, { icon: busIcon })
-            .bindPopup(`<b>${busNumber}</b><br>Speed: ${speed} km/h<br>Passengers: ${passengers}`)
+            .bindPopup(`<b>${bus.busNumber}</b><br>Speed: ${bus.speed} km/h<br>Passengers: ${bus.passengerCount}`)
             .addTo(map);
-        busMarkers.set(busId, marker);
+        busMarkers.set(bus.id, marker);
     }
 
-    busMarkers.get(busId).getPopup()
-        .setContent(`<b>${busNumber}</b><br>Speed: ${speed} km/h<br>Passengers: ${passengers}`);
+    busMarkers.get(bus.id).getPopup()
+        .setContent(`<b>${bus.busNumber}</b><br>Speed: ${bus.speed} km/h<br>Passengers: ${bus.passengerCount}`);
 }
 
 function addStopMarker(stopId, name, latitude, longitude, waitingPassengers) {
@@ -76,14 +76,7 @@ async function loadMapData() {
         if (data.buses && data.buses.length > 0) {
             data.buses.forEach(bus => {
                 if (bus.currentLatitude && bus.currentLongitude) {
-                    updateBusMarker(
-                        bus.id,
-                        bus.currentLatitude,
-                        bus.currentLongitude,
-                        bus.busNumber,
-                        bus.speed,
-                        bus.passengerCount
-                    );
+                    updateBusMarker(bus);
                 }
             });
             console.log(`Added ${data.buses.length} buses`);
@@ -100,9 +93,8 @@ async function loadMapData() {
     }
 }
 
-function updateBusRealtime(busId, latitude, longitude, speed, passengerCount) {
-    const busNumber = `BUS-${busId.toString().padStart(3, '0')}`;
-    updateBusMarker(busId, latitude, longitude, busNumber, speed, passengerCount);
+function updateBusRealtime(bus) {
+    updateBusMarker(bus);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -125,7 +117,7 @@ document.addEventListener('shown.bs.modal', function (e) {
     const modal = e.target;
     const mapContainer = modal.querySelector('#selectionMap');
     if (!mapContainer) return;
-    
+
     const latInput = modal.querySelector('#Latitude');
     const lngInput = modal.querySelector('#Longitude');
     const displayLat = modal.querySelector('#displayLat');
@@ -141,9 +133,13 @@ document.addEventListener('shown.bs.modal', function (e) {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
     }).addTo(selectionMap);
-    
-    if (latInput.value && lngInput.value) {
-        const startLatLng = [parseFloat(latInput.value), parseFloat(lngInput.value)];
+
+    const lat = parseFloat(latInput?.value);
+    const lng = parseFloat(lngInput?.value);
+    const hasExistingLocation = !isNaN(lat) && !isNaN(lng) && !(lat === 0 && lng === 0);
+
+    if (hasExistingLocation) {
+        const startLatLng = [lat, lng];
         SelectMarker = L.marker(startLatLng).addTo(selectionMap);
         selectionMap.setView(startLatLng, 15);
     }

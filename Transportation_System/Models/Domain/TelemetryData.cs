@@ -1,7 +1,6 @@
 ﻿namespace Transportation_System.Models.Domain;
 
-    public class TelemetryData
-    {
+    public class TelemetryData {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public double Speed { get; set; }

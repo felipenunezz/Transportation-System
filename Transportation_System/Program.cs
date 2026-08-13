@@ -3,8 +3,6 @@ using Transportation_System.Data;
 using Transportation_System.Hubs;
 using Transportation_System.MQTT;
 using Transportation_System.Services;
-using Npgsql.EntityFrameworkCore.PostgreSQL;
-using Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation;
 
 var builder = WebApplication.CreateBuilder(args);
 

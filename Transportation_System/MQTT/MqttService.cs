@@ -1,14 +1,11 @@
 ﻿using MQTTnet;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 using Transportation_System.Models.Dto;
 using Transportation_System.Services;
 
 namespace Transportation_System.MQTT;
 
-public class MqttService : BackgroundService
-{
+public class MqttService : BackgroundService {
     private readonly ILogger<MqttService> _logger;
     private readonly IMqttClient _mqttClient;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -19,8 +16,7 @@ public class MqttService : BackgroundService
     private const string BusTopic = "buses/+/+";
     private const string StopTopic = "stops/+/+";
 
-    public MqttService(IServiceScopeFactory scopeFactory, ILogger<MqttService> logger, IConfiguration config)
-    {
+    public MqttService(IServiceScopeFactory scopeFactory, ILogger<MqttService> logger, IConfiguration config) {
         _logger = logger;
         _scopeFactory = scopeFactory;
         
@@ -31,22 +27,17 @@ public class MqttService : BackgroundService
         _mqttClient = _mqttClientFactory.CreateMqttClient();
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         _mqttClient.ConnectedAsync += OnConnectedAsync;
         _mqttClient.DisconnectedAsync += OnDisconnectedAsync;
         _mqttClient.ApplicationMessageReceivedAsync += OnMessageReceivedAsync;
         
         await ConnectedAsync(stoppingToken);
 
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            await Task.Delay(1000, stoppingToken);
-        }
+        while (!stoppingToken.IsCancellationRequested) { await Task.Delay(1000, stoppingToken); }
     }
 
-    private async Task ConnectedAsync(CancellationToken cancellationToken)
-    {
+    private async Task ConnectedAsync(CancellationToken cancellationToken) {
         var options = new MqttClientOptionsBuilder()
             .WithTcpServer(_brokerHost, _brokerPort)
             .WithClientId("TransportationSystem-" + Environment.MachineName)
@@ -56,8 +47,7 @@ public class MqttService : BackgroundService
         try { await _mqttClient.ConnectAsync(options, cancellationToken); }
     catch (Exception e) { _logger.LogError(e, "Could not connect to Mqtt broker at {Host}:{Port}.",  _brokerHost, _brokerPort); }
     }    
-    private async Task OnConnectedAsync(MqttClientConnectedEventArgs arg)
-    {
+    private async Task OnConnectedAsync(MqttClientConnectedEventArgs arg) {
         _logger.LogInformation("Connected to MQTT Broker, subscribing to {Topic}", BusTopic);
         
         var subscribeOptions = _mqttClientFactory.CreateSubscribeOptionsBuilder()
@@ -68,22 +58,18 @@ public class MqttService : BackgroundService
         await _mqttClient.SubscribeAsync(subscribeOptions, CancellationToken.None);
     }
     
-    private async Task OnDisconnectedAsync(MqttClientDisconnectedEventArgs arg)
-    {
+    private async Task OnDisconnectedAsync(MqttClientDisconnectedEventArgs arg) {
         _logger.LogInformation("Disconnected from MQTT Broker {Reason}, reconnecting in 5s", arg.Reason);
         await Task.Delay(TimeSpan.FromSeconds(5));
         await ConnectedAsync(CancellationToken.None);
     }
     
-    private async Task OnMessageReceivedAsync(MqttApplicationMessageReceivedEventArgs arg)
-    {
+    private async Task OnMessageReceivedAsync(MqttApplicationMessageReceivedEventArgs arg) {
         var topic = arg.ApplicationMessage.Topic;
 
-        try
-        {
+        try {
             var parts = topic.Split('/');
-            if (parts.Length < 3)
-            {
+            if (parts.Length < 3) {
                 _logger.LogWarning("Unrecognized topic shape {Topic}", topic);
                 return;
             }
@@ -91,8 +77,7 @@ public class MqttService : BackgroundService
             var entityType = parts[0];
             var messageType = parts[2];
 
-            if (!int.TryParse(parts[1], out var entityId))
-            {
+            if (!int.TryParse(parts[1], out var entityId)) {
                 _logger.LogWarning("Could not parse entity id from topic {Topic}", topic);
                 return;
             }
@@ -101,8 +86,7 @@ public class MqttService : BackgroundService
             using var scope = _scopeFactory.CreateScope();
             var processor = scope.ServiceProvider.GetRequiredService<TelemetryProcessor>();
 
-            switch (entityType, messageType)
-            {
+            switch (entityType, messageType) {
                 case ("buses", "telemetry"):
                     await HandleBusTelemetry(processor, entityId, payload, topic);
                     break;
@@ -116,16 +100,13 @@ public class MqttService : BackgroundService
                     break;
             }
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             _logger.LogError(e, "Error handling MQTT Message on {Topic}", topic);
         }
     }
 
-    public override async Task StopAsync(CancellationToken cancellationToken)
-    {
-        if (_mqttClient.IsConnected)
-        {
+    public override async Task StopAsync(CancellationToken cancellationToken) {
+        if (_mqttClient.IsConnected) {
             await _mqttClient.DisconnectAsync(new MqttClientDisconnectOptions(){
                 Reason = MqttClientDisconnectOptionsReason.NormalDisconnection
             });
@@ -133,22 +114,18 @@ public class MqttService : BackgroundService
         await base.StopAsync(cancellationToken);
     }
     
-    private async Task HandleBusTelemetry(TelemetryProcessor processor, int busId, string payload, string topic)
-    {
+    private async Task HandleBusTelemetry(TelemetryProcessor processor, int busId, string payload, string topic) {
         var dto = JsonSerializer.Deserialize<BusTelemetryDto>(payload);
-        if (dto is null)
-        {
+        if (dto is null) {
             _logger.LogWarning("Could not parse payload on {Topic}: {Payload}", topic, payload);
             return;
         }
         await processor.ProcessBusAsync(busId, dto);
     }
 
-    private async Task HandleStopTelemetry(TelemetryProcessor processor, int stopId, string payload, string topic)
-    {
+    private async Task HandleStopTelemetry(TelemetryProcessor processor, int stopId, string payload, string topic) {
         var dto = JsonSerializer.Deserialize<BusStopOccupancyDto>(payload);
-        if (dto is null)
-        {
+        if (dto is null) {
             _logger.LogWarning("Could not parse payload on {Topic}: {Payload}", topic, payload);
             return;
         }
