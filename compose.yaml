@@ -11,6 +11,23 @@
     networks:
       - transport_network
 
+  valhalla:
+    image: ghcr.io/valhalla/valhalla-scripted:latest
+    ports:
+      - "8002:8002"
+    volumes:
+      - valhalla-data:/custom_files
+    environment:
+      - tile_urls=https://download.geofabrik.de/russia/volga-fed-district-latest.osm.pbf
+      - build_elevation=False
+      - build_admins=True
+      - build_time_zones=True
+      - force_rebuild=False
+      - server_threads=2
+    restart: unless-stopped
+    networks:
+      - transport_network
+
   web:
     build:
       context: .
@@ -22,18 +39,21 @@
     environment:
       - MqttSettings__BrokerAddress
       - ConnectionStrings__DefaultConnection
+      - ValhallaSettings__BaseUrl=http://valhalla:8002
     depends_on:
       mosquitto:
         condition: service_started
       postgres:
         condition: service_started
+      valhalla:
+        condition: service_started
 
   postgres:
     image: postgres:17
     environment:
-       - POSTGRES_USER=postgres
-       - POSTGRES_PASSWORD=ABC123
-       - POSTGRES_DB=transportationDb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=ABC123
+      - POSTGRES_DB=transportationDb
     ports:
       - "54325:5432"
     volumes:
@@ -43,8 +63,9 @@
 
 volumes:
   postgres-data: { }
-  mosquitto-data:
-    
+  mosquitto-data: { }
+  valhalla-data: { }
+
 networks:
   transport_network:
     driver: bridge
