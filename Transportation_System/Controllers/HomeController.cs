@@ -15,11 +15,11 @@ public class HomeController(BusDbContext context, RoutingService routingService)
             .Where(b => b.Status != BusStatus.OffRoute)
             .ToListAsync();
 
-        var busStops = await context.Stops.ToListAsync();
+        var stops = await context.Stops.ToListAsync();
         var routes = await context.Routes.ToListAsync();
 
         ViewBag.ActiveBuses = activeBuses;
-        ViewBag.Stops = busStops;
+        ViewBag.Stops = stops;
         ViewBag.Routes = routes;
 
         return View();
