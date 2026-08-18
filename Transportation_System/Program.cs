@@ -20,6 +20,13 @@ builder.Services.AddScoped<StopService>();
 builder.Services.AddScoped<TelemetryProcessor>();
 builder.Services.AddHostedService<MqttService>();
 
+builder.Services.AddHttpClient<RoutingService>(client =>
+{
+    var baseUrl = builder.Configuration["ValhallaSettings:BaseUrl"] ?? "http://localhost:8002";
+    client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
