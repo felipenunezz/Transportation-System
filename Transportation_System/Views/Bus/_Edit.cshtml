@@ -25,13 +25,13 @@
             <span asp-validation-for="BusNumber" class="text-danger small"></span>
         </div>
         <div class="col-md-6">
-            <label asp-for="BusRouteId" class="form-label fw-semibold">
+            <label asp-for="RouteId" class="form-label fw-semibold">
                 <i class="bi bi-signpost-2 me-1 text-primary"></i>Route
             </label>
-            <select asp-for="BusRouteId" class="form-select" asp-items="ViewBag.BusRouteId">
+            <select asp-for="RouteId" class="form-select" asp-items="ViewBag.RouteId">
                 <option value="" disabled selected>-- Select Route --</option>
             </select>
-            <span asp-validation-for="BusRouteId" class="text-danger small"></span>
+            <span asp-validation-for="RouteId" class="text-danger small"></span>
         </div>
     </div>
 
@@ -40,6 +40,16 @@
     <h6 class="text-muted text-uppercase small fw-bold mb-2">
         <i class="bi bi-geo-alt me-1"></i>Location
     </h6>
+    
+    <div class="col-md-6">
+        <label asp-for="StopId" class="form-label fw-semibold">
+            <i class="bi bi-geo-fill me-1 text-primary"></i>Stop
+        </label>
+        <select asp-for="StopId" class="form-select" asp-items="ViewBag.StopId">
+            <option value="" disabled selected>-- Select Stop --</option>
+        </select>
+        <span asp-validation-for="StopId" class="text-danger small"></span>
+    </div>
 
     <hr class="my-3">
 

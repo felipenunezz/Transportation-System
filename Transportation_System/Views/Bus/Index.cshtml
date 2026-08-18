@@ -1,3 +1,4 @@
+@using Transportation_System.Models.Domain
 @model IEnumerable<Transportation_System.Models.Domain.Bus>
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
@@ -15,7 +16,10 @@
             @Html.DisplayNameFor(model => model.BusNumber)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.BusRoute.Name)
+            @Html.DisplayNameFor(model => model.Route!.Name)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Stop!.Name)
         </th>
         <th>
             @Html.DisplayNameFor(model => model.Speed)
@@ -39,7 +43,18 @@
                 @Html.DisplayFor(modelItem => item.BusNumber)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.BusRoute.Name)
+                @if (item.RouteId is not null)
+                {
+                    @Html.DisplayFor(modelItem => item.Route!.Name)
+                }
+                else {<span>Currently off route</span>}
+            </td>
+            <td>
+                @if (item.Status is BusStatus.AtStop or BusStatus.OffRoute)
+                {
+                    @Html.DisplayFor(modelItem => item.Stop!.Name)
+                }
+                else {<span>Moving</span>} 
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.Speed)
@@ -76,7 +91,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <partial name="_Create" model="new Transportation_System.Models.Domain.Bus()" />
+                <partial name="_Create" model="new Bus()" />
             </div>
         </div>
     </div>

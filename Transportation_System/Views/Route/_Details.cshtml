@@ -1,4 +1,4 @@
-@model Transportation_System.Models.Domain.BusRoute
+@model Transportation_System.Models.Domain.Route
 
 <div class="mb-3 text-center">
     <i class="bi bi-info-circle text-info fa-2x"></i>
@@ -27,5 +27,20 @@
         {
             <span class="badge bg-secondary">Inactive</span>
         }
+    </dd>
+    
+    <dt class ="col-sm-4 text-muted">
+        <i class="bi bi-list-ol me-1"></i> Stops
+    </dt>
+    
+    <dd class ="col-sm-8">
+        @{ var stops = (List<Transportation_System.Models.Domain.Stop>)ViewBag.OrderedStops;}
+        @for (int i = 0; i < stops.Count; i++)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-md-start" datas-stop-id="@stops[i].Id">
+                <span><span class="text-muted me-2">@(i + 1).</span>@stops[i].Name</span>
+            </li>
+        }
+        @if (!stops.Any()) { <li class = "list-group-item text-muted">No stops on this route yet.</li>}
     </dd>
 </dl>

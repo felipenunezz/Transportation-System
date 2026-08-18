@@ -33,11 +33,15 @@ function updateBusMarker(bus) {
         .setContent(`<b>${bus.busNumber}</b><br>Speed: ${bus.speed} km/h<br>Passengers: ${bus.passengerCount}`);
 }
 
-function addStopMarker(stopId, name, latitude, longitude, waitingPassengers) {
-    const marker = L.marker([latitude, longitude], { icon: stopIcon })
-        .bindPopup(`<b>${name}</b><br>Waiting: ${waitingPassengers} passengers`)
+function addStopMarker(stop) {
+    const popupContent = `<b>${stop.name}</b>` +
+        (stop.type === "Hub" ? '' : `<br>Waiting: ${stop.waitingPassengers} passengers`);
+
+    const marker = L.marker([stop.latitude, stop.longitude], { icon: stopIcon })
+        .bindPopup(popupContent)
         .addTo(map);
-    stopMarkers.set(stopId, marker);
+
+    stopMarkers.set(stop.id, marker);
 }
 
 function drawRoute(routeCoordinates, color = '#3388ff') {
@@ -57,7 +61,8 @@ async function loadMapData() {
 
         if (data.stops && data.stops.length > 0) {
             data.stops.forEach(stop => {
-                addStopMarker(stop.id, stop.name, stop.latitude, stop.longitude, stop.waitingPassengers);
+                
+                addStopMarker(stop);
             });
             console.log(`Added ${data.stops.length} stops`);
         }
@@ -98,7 +103,7 @@ function updateBusRealtime(bus) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    if (!document.getElementById('map')) return; // this page has no dashboard map
+    if (!document.getElementById('map')) return;
 
     map = L.map('map').setView([56.326797, 44.006516], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -122,6 +127,9 @@ document.addEventListener('shown.bs.modal', function (e) {
     const lngInput = modal.querySelector('#Longitude');
     const displayLat = modal.querySelector('#displayLat');
     const displayLng = modal.querySelector('#displayLng');
+    
+    //for _Details.cshtml and _Delete.cshtml
+    const enableSelection = mapContainer.dataset.enableSelection === 'true';
 
     if (selectionMap) {
         selectionMap.remove();
@@ -144,7 +152,8 @@ document.addEventListener('shown.bs.modal', function (e) {
         selectionMap.setView(startLatLng, 15);
     }
 
-    selectionMap.on('click', function (e) {
+    if (enableSelection) {
+        selectionMap.on('click', function (e) {
         const lat = e.latlng.lat.toFixed(6);
         const lng = e.latlng.lng.toFixed(6);
 
@@ -155,7 +164,10 @@ document.addEventListener('shown.bs.modal', function (e) {
 
         if (SelectMarker) selectionMap.removeLayer(SelectMarker);
         SelectMarker = L.marker(e.latlng).addTo(selectionMap);
-    });
-
+    });}
+    else {
+        displayLat.textContent = lat;
+        displayLng.textContent = lng;
+    }
     setTimeout(() => selectionMap.invalidateSize(), 100);
 });
