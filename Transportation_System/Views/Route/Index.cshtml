@@ -1,4 +1,5 @@
-@model IEnumerable<Transportation_System.Models.Domain.BusStop>
+@using Transportation_System.Models.Domain
+@model IEnumerable<Transportation_System.Models.Domain.Route>
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 
@@ -6,77 +7,68 @@
     Layout = "_Layout";
     ViewData["Title"] = "Index";
 }
-
-<h1>Stops</h1>
+    
+<h1>Routes</h1>
 
 <table class="table table-striped table-hover">
     <thead>
-    <tr>
-        <th>
-            @Html.DisplayNameFor(model => model.Name)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Latitude)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Longitude)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.WaitingPassengers)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Address)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.BusRoute.Name)
-        </th>
-        <th></th>
-    </tr>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Description)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IsActive)
+            </th>
+            <th> Actions </th>
+        </tr>
     </thead>
     <tbody>
-    @foreach (var item in Model) {
+@foreach (var item in Model) {
         <tr>
             <td>
                 @Html.DisplayFor(modelItem => item.Name)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Latitude)
+                @Html.DisplayFor(modelItem => item.Description)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Longitude)
+                <dd class="col-sm-8">
+                    @if (item.IsActive)
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Inactive</span>
+                    }
+                </dd>
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.WaitingPassengers)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Address)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.BusRoute.Name)
-            </td>
-            <td>
-                <i class="fa-solid fa-pen-to-square text-success" style="cursor: pointer;" onclick="openModal('BusStop', @item.Id, 'Edit')"></i>|
-                <i class="fa-solid fa-magnifying-glass" style="cursor: pointer;" onclick="openModal('BusStop', @item.Id, 'Details')"></i> |
-                <i class="fa-solid fa-trash-can text-danger" style="cursor: pointer;" onclick="openModal('BusStop',  @item.Id, 'Delete')"></i>
+                <i class="fa-solid fa-pen-to-square text-success" style="cursor: pointer;" onclick="openModal('Route', @item.Id, 'Edit')"></i>|
+                <i class="fa-solid fa-magnifying-glass" style="cursor: pointer;" onclick="openModal('Route', @item.Id, 'Details')"></i> |
+                <i class="fa-solid fa-trash-can text-danger" style="cursor: pointer;" onclick="openModal('Route',  @item.Id, 'Delete')"></i>
             </td>
         </tr>
-    }
+}
     </tbody>
 </table>
 
 <button type="button" class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#createModal">
-    <i class="bi bi-plus-lg"></i> Create Bus
+    <i class="bi bi-plus-lg"></i> Create Route
 </button>
 
 <div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Create Stop</h5>
+                <h5 class="modal-title">Create Route</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <partial name="_Create" model="new Transportation_System.Models.Domain.BusStop()" />
+                <partial name="_Create" model="new Route()" />
             </div>
         </div>
     </div>

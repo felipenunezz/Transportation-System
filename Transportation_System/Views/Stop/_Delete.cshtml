@@ -1,4 +1,5 @@
-@model Transportation_System.Models.Domain.BusStop
+@using Transportation_System.Models.Domain
+@model Transportation_System.Models.Domain.Stop
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 @{
@@ -19,27 +20,34 @@
         <i class="bi bi-geo-alt me-1"></i>Address
     </dt>
     <dd class="col-sm-8">@Html.DisplayFor(model => model.Address)</dd>
-
+    
     <dt class="col-sm-4 text-muted">
-        <i class="bi bi-globe me-1"></i>Latitude
+        <i class="bi bi-globe me-1"></i>Location
     </dt>
-    <dd class="col-sm-8">@Html.DisplayFor(model => model.Latitude)</dd>
+    
+    <input type="hidden" asp-for="Latitude" id="Latitude"/>
+    <input type="hidden" asp-for="Longitude" id="Longitude"/>
+    
+    <dd class="col-sm-8">    
+        <div id="selectionMap" style="height: 250px; border-radius: 0.375rem; z-index: 0;" data-enable-selection="false"></div>
+        <div class="form-text text-muted mt-1">
+            Lat: <span id="displayLat">--</span>, Lng: <span id="displayLng">--</span>
+        </div>
+    </dd>
+    
+    @if (Model.Type != StopType.Hub)
+    {
+        <dt class="col-sm-4 text-muted">
+            <i class="bi bi-people me-1"></i>Waiting
+        </dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.WaitingPassengers)</dd>
 
-    <dt class="col-sm-4 text-muted">
-        <i class="bi bi-globe me-1"></i>Longitude
-    </dt>
-    <dd class="col-sm-8">@Html.DisplayFor(model => model.Longitude)</dd>
-
-    <dt class="col-sm-4 text-muted">
-        <i class="bi bi-people me-1"></i>Waiting
-    </dt>
-    <dd class="col-sm-8">@Html.DisplayFor(model => model.WaitingPassengers)</dd>
-
-    <dt class="col-sm-4 text-muted">
-        <i class="bi bi-signpost-2 me-1"></i>Route
-    </dt>
-    <dd class="col-sm-8">@Html.DisplayFor(model => model.BusRoute.Name)</dd>
-</dl>
+        <dt class="col-sm-4 text-muted">
+            <i class="bi bi-signpost-2 me-1"></i>Route
+        </dt>
+        <dd class="col-sm-8">@Html.DisplayFor(model => model.Route.Name)</dd>
+    }
+</dl >
 
 <form asp-action="Delete" method="post" id="deleteForm" class="ajax-form">
     @Html.AntiForgeryToken()

@@ -1,4 +1,4 @@
-@model Transportation_System.Models.Domain.BusRoute
+@model Transportation_System.Models.Domain.Route
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 <form asp-action="Edit" asp-route-id="@Model.Id" method="post" id="editForm" class="ajax-form">
@@ -41,7 +41,7 @@
     </h6>
 
     <ul id="stopQueue" class="list-group mb-2" data-route-id="@Model.Id">
-        @{ var stops = (List<Transportation_System.Models.Domain.BusStop>)ViewBag.OrderedStops; }
+        @{ var stops = (List<Transportation_System.Models.Domain.Stop>)ViewBag.OrderedStops; }
         @for (int i = 0; i < stops.Count; i++)
         {
             <li class="list-group-item d-flex justify-content-between align-items-center" data-stop-id="@stops[i].Id">

@@ -43,7 +43,6 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<BusDbContext>();
     var dataSeed = new DataSeed();
-    dbContext.Database.EnsureCreated();
     await dbContext.Database.MigrateAsync();
     await dataSeed.SeedAsync(dbContext);
 }

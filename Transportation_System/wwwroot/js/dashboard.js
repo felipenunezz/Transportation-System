@@ -33,7 +33,7 @@ connection.on("BusUpdated", async (busId) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    const stops = window.__dashboardData?.busStops || [];
+    const stops = window.__dashboardData?.Stops || [];
     stops.forEach(stop => {
         addStopMarker(stop.id, stop.name, stop.latitude, stop.longitude);
     });

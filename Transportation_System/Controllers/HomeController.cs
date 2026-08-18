@@ -10,58 +10,68 @@ public class HomeController(BusDbContext context) : Controller
     public async Task<IActionResult> Dashboard()
     {
         var activeBuses = await context.Buses
-            .Include(b => b.BusRoute)
-            .Where(b => b.Status != BusStatus.OutOfService)
+            .Include(b => b.Route)
+            .Where(b => b.Status != BusStatus.OffRoute)
             .ToListAsync();
-                
-        var busStops = await context.BusStops.ToListAsync();
-        var routes = await context.BusRoutes.ToListAsync();
-            
+
+        var stops = await context.Stops.ToListAsync();
+        var routes = await context.Routes.ToListAsync();
+
         ViewBag.ActiveBuses = activeBuses;
-        ViewBag.BusStops = busStops;
+        ViewBag.Stops = stops;
         ViewBag.Routes = routes;
-            
+
         return View();
     }
 
-    public IActionResult Index() { return RedirectToAction("Dashboard"); }
-    
+    public IActionResult Index()
+    {
+        return RedirectToAction("Dashboard");
+    }
+
     [HttpGet("/api/mapdata")]
-    public async Task<IActionResult> GetMapData() {
+    public async Task<IActionResult> GetMapData()
+    {
         var buses = await context.Buses
-            .Where(b => b.Status != BusStatus.OutOfService)
-            .Select(b => new {
+            .Where(b => b.Status != BusStatus.OffRoute)
+            .Select(b => new
+            {
                 id = b.Id,
                 busNumber = b.BusNumber,
-                routeName = b.BusRoute != null ? b.BusRoute.Name : null,
+                routeName = b.Route != null ? b.Route.Name : null,
                 currentLatitude = b.CurrentLatitude,
                 currentLongitude = b.CurrentLongitude,
                 speed = b.Speed,
                 passengerCount = b.PassengerCount,
                 status = b.Status.ToString()
+                
             }).ToListAsync();
 
-        var stops = await context.BusStops.Select(s => new {
+        var stops = await context.Stops.Select(s => new
+        {
             id = s.Id,
             name = s.Name,
             latitude = s.Latitude,
             longitude = s.Longitude,
-            waitingPassengers = s.WaitingPassengers
+            waitingPassengers = s.WaitingPassengers,
+            type = s.Type.ToString()
         }).ToListAsync();
-        
-        var routesRaw = await context.BusRoutes.ToListAsync();
+
+        var routesRaw = await context.Routes.ToListAsync();
 
         var referencedStopIds = routesRaw.SelectMany(r => r.RouteStops).Distinct().ToList();
-        var stopsById = await context.BusStops
+        var stopsById = await context.Stops
             .Where(s => referencedStopIds.Contains(s.Id))
             .ToDictionaryAsync(s => s.Id);
 
-        var routes = routesRaw.Select(r => new {
+        var routes = routesRaw.Select(r => new
+        {
             id = r.Id,
             name = r.Name,
             stops = r.RouteStops
-                .Where(stopId => stopsById.ContainsKey(stopId)) // guards against a stale id left in the queue
-                .Select(stopId => new {
+                .Where(stopId => stopsById.ContainsKey(stopId))
+                .Select(stopId => new
+                {
                     latitude = stopsById[stopId].Latitude,
                     longitude = stopsById[stopId].Longitude
                 })

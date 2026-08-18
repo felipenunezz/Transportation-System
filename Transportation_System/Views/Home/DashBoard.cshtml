@@ -5,7 +5,7 @@
     Layout = "_Layout";
     ViewData["Title"] = "Live Bus Tracking Dashboard";
     var buses = ViewBag.ActiveBuses as List<Bus>;
-    var stops = ViewBag.BusStops as List<BusStop>;
+    var stops = ViewBag.Stops as List<Stop>;
 }
 
 <div class="container-fluid">
@@ -42,7 +42,7 @@
                                 <div class="card mb-2 bus-card" data-bus-id="@bus.Id">
                                     <div class="card-body">
                                         <h6>@bus.BusNumber</h6>
-                                        <small>Route: @bus.BusRouteId</small><br/>
+                                        <small>Route: @bus.RouteId</small><br/>
                                         <small>Status: <span class="badge bg-success">@bus.Status</span></small>
                                         <br/>
                                         <small>Speed: <span class="speed">@bus.Speed</span> km/h</small>
@@ -67,7 +67,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script>
         window.__dashboardData = {
-            busStops: @Html.Raw(Json.Serialize(ViewBag.BusStops))
+            stops: @Html.Raw(Json.Serialize(ViewBag.Stops))
         };
     </script>
     <script src="/js/dashboard.js"></script>

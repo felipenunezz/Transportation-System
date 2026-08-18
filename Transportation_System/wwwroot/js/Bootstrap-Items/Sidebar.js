@@ -38,13 +38,13 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/BusStop/Index" class="nav-link ${isActive('/BusStop/Index')}">
+                        <a href="/Stop/Index" class="nav-link ${isActive('/Stop/Index')}">
                             <i class="bi bi-sign-stop me-2"></i>
                             Stops
                         </a>
                     </li>
                     <li>
-                        <a href="/BusRoute/Index" class="nav-link ${isActive('/BusRoute/Index')}">
+                        <a href="/Route/Index" class="nav-link ${isActive('/Route/Index')}">
                             <i class="bi bi-map me-2"></i>
                             Routes
                         </a>
