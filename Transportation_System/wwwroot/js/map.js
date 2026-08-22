@@ -5,12 +5,7 @@ let selectMarker;
 const busMarkers = new Map();
 const stopMarkers = new Map();
 
-// Raster source pointed at the public OSM tile server — same tiles as
-// before, just served through MapLibre's style spec instead of Leaflet's
-// tileLayer. Note: tile.openstreetmap.org's usage policy expects light,
-// non-commercial traffic with a real User-Agent — fine for dev/small
-// deployments, but for anything heavier consider a provider like MapTiler
-// (free tier) or self-hosting tiles later.
+
 const OSM_STYLE = {
     version: 8,
     sources: {
@@ -52,21 +47,22 @@ function updateBusMarker(bus) {
     }
 }
 
-function addStopMarker(stopId, name, latitude, longitude, waitingPassengers) {
+function addStopMarker(stop) {
+    var  route  = data.routes.select(route => route.id = stop.routeId)
+    if (route.isActive !== true) {return;}
+    
     const popup = new maplibregl.Popup({ offset: 12 })
-        .setHTML(`<b>${name}</b><br>Waiting: ${waitingPassengers} passengers`);
+        .setHTML(`<b>${name}</b><br>Waiting: ${stop.waitingPassengers} passengers`);
     const marker = new maplibregl.Marker({ element: createIconElement('🚏', 22) })
-        .setLngLat([longitude, latitude])
+        .setLngLat([stop.longitude, stop.latitude])
         .setPopup(popup)
         .addTo(map);
-    stopMarkers.set(stopId, marker);
+    stopMarkers.set(stop.id, marker);
 }
 
 let routeLayerCount = 0;
 
 function drawRoute(routeCoordinates, color = '#3388ff') {
-    // Called with [[lat, lng], ...] (matches the shape loadMapData already
-    // builds) — MapLibre/GeoJSON wants [lng, lat].
     const coords = routeCoordinates.map(([lat, lng]) => [lng, lat]);
     const id = `route-${routeLayerCount++}`;
 
@@ -81,7 +77,7 @@ function drawRoute(routeCoordinates, color = '#3388ff') {
         source: id,
         paint: {
             'line-color': color,
-            'line-width': 3,
+            'line-width': 6,
             'line-opacity': 0.7
         }
     });
@@ -107,7 +103,7 @@ async function loadMapData() {
 
         if (data.stops && data.stops.length > 0) {
             data.stops.forEach(stop => {
-                addStopMarker(stop.id, stop.name, stop.latitude, stop.longitude, stop.waitingPassengers);
+                addStopMarker(stop);
             });
             console.log(`Added ${data.stops.length} stops`);
         }
@@ -212,21 +208,21 @@ document.addEventListener('shown.bs.modal', function (e) {
 
     if (enableSelection) {
         selectionMap.on('click', function (e) {
-        const lat = e.latlng.lat.toFixed(6);
-        const lng = e.latlng.lng.toFixed(6);
+            const lat = e.lngLat.lat.toFixed(6);
+            const lng = e.lngLat.lng.toFixed(6);
 
-        latInput.value = lat;
-        lngInput.value = lng;
-        if (displayLat) displayLat.textContent = lat;
-        if (displayLng) displayLng.textContent = lng;
+            latInput.value = lat;
+            lngInput.value = lng;
+            if (displayLat) displayLat.textContent = lat;
+            if (displayLng) displayLng.textContent = lng;
 
-        if (selectMarker) selectMarker.remove();
-        selectMarker = new maplibregl.Marker().setLngLat(e.lngLat).addTo(selectionMap);
-    });
+            if (selectMarker) selectMarker.remove();
+            selectMarker = new maplibregl.Marker().setLngLat(e.lngLat).addTo(selectionMap);
+        });
     }
     else {
         displayLat.textContent = lat;
-        displayLng.textContent = lng;
+       displayLng.textContent = lng;
     }
     setTimeout(() => selectionMap.resize(), 100);
 });

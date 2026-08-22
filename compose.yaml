@@ -27,6 +27,25 @@
     restart: unless-stopped
     networks:
       - transport_network
+  
+  simulator:
+    build:
+      context: .
+      dockerfile: "Simulator/Dockerfile"
+    environment:
+      - MQTT_BROKER_HOST=mosquitto
+      - MQTT_BROKER_PORT=1883
+      - PUBLISH_INTERVAL_SECONDS=3
+      - DEVICE_REFRESH_INTERVAL_SECONDS=30
+      - ConnectionStrings__DefaultConnection
+    depends_on:
+      mosquitto:
+        condition: service_started
+      postgres:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - transport_network
 
   web:
     build:

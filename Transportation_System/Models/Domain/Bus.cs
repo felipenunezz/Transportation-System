@@ -49,6 +49,5 @@ public enum BusStatus
 {
     OnRoute,
     OffRoute,
-    AtStop,
-    Delayed
+    AtStop
 }

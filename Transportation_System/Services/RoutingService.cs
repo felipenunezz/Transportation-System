@@ -7,14 +7,16 @@ namespace Transportation_System.Services;
 public class RoutingService (HttpClient httpClient, ILogger<RoutingService>  logger)
 {
     //sets valhalla to use a bigger kind of vehicle instead of the default one.
-    private const string Coasting = "bus";
+    private const string Costing = "bus";
     
     //call for valhalla to create a route folowing the stops in order.
-    public async Task<List<(double Latitude, double Longitude)>?> GetRouteShapeAsync (IReadOnlyList<Stop> orderedStops) 
+    public async Task<List<(double Latitude, double Longitude)>?> GetRouteShapeAsync (IReadOnlyList<(double Latitude, double Longitude)> _points) 
     {
-        if (orderedStops.Count < 2) return null;
+        if (_points.Count < 2) return null;
         
-        var request = new ValhallaRouteRequest(orderedStops.Select(s => new ValhallaLocation(s.Latitude, s.Longitude)).ToList(), Coasting);
+        var request = new ValhallaRouteRequest(
+            _points.Select(p => new ValhallaLocation(p.Latitude, p.Longitude)).ToList(),
+            Costing);
 
         HttpResponseMessage response;
         try

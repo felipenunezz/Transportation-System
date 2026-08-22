@@ -62,6 +62,7 @@ public class BusService(BusDbContext dbContext)
             queue.Dequeue();
             bus.StopQueue = queue.ToList();
             bus.StopId = nextStop.Id;
+            bus.Status = BusStatus.AtStop;
         }
     }
 

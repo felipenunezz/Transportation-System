@@ -49,7 +49,8 @@ public class HomeController(BusDbContext context, RoutingService routingService)
             name = s.Name,
             latitude = s.Latitude,
             longitude = s.Longitude,
-            waitingPassengers = s.WaitingPassengers
+            waitingPassengers = s.WaitingPassengers,
+            routeId = s.RouteId
         }).ToListAsync();
 
         var routesRaw = await context.Routes.ToListAsync();
@@ -70,7 +71,8 @@ public class HomeController(BusDbContext context, RoutingService routingService)
             List<object> shapePoints;
             if (orderedStops.Count >= 2)
             {
-                var roadShape = await routingService.GetRouteShapeAsync(orderedStops);
+                var roadShape = await routingService.GetRouteShapeAsync(
+                    orderedStops.Select(s => (s.Latitude, s.Longitude)).ToList());
                 shapePoints = (roadShape ?? orderedStops.Select(s => (s.Latitude, s.Longitude)))
                     .Select(p => (object)new { latitude = p.Item1, longitude = p.Item2 })
                     .ToList();
@@ -82,7 +84,7 @@ public class HomeController(BusDbContext context, RoutingService routingService)
                     .ToList();
             }
 
-            routes.Add(new { id = r.Id, name = r.Name, stops = shapePoints });
+            routes.Add(new { id = r.Id, name = r.Name, stops = shapePoints, isActive = r.IsActive });
         }
 
         return Json(new { buses, stops, routes });
