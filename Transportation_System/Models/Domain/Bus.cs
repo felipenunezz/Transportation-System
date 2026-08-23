@@ -2,7 +2,7 @@
 
 namespace Transportation_System.Models.Domain;
 
-public class Bus : IValidatableObject
+public class Bus
 {
     public int Id { get; set; }
 
@@ -12,7 +12,9 @@ public class Bus : IValidatableObject
     public string? BusNumber { get; set; }
 
     [Display(Name = "Route Id")] public int? RouteId { get; set; }
-    public Route? Route { get; set; }
+    public Route Route { get; set; }
+    
+    public bool OnRoute { get; set; }
 
     [Display(Name = "Current Stop")] public int? StopId { get; set; }
     public Stop? Stop { get; set; }
@@ -30,24 +32,13 @@ public class Bus : IValidatableObject
     public BusStatus Status { get; set; }
 
     [Display(Name = "Last Update")] public DateTime LastUpdate { get; set; }
-
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        if (Status != BusStatus.OffRoute && RouteId == null)
-        {
-            yield return new ValidationResult("Bus Route id is required", new[] { nameof(RouteId) });
-        }
-
-        if (Status == BusStatus.AtStop && StopId == null)
-        {
-            yield return new ValidationResult("Bus Stop Id is required", new[] { nameof(StopId) });
-        }
-    }
 }
 
 public enum BusStatus
 {
-    OnRoute,
-    OffRoute,
-    AtStop
+    Staring,
+    AtStop,
+    Moving,
+    Returning,
+    Parked
 }

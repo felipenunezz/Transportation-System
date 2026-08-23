@@ -21,14 +21,14 @@
             <label asp-for="Name" class="form-label fw-semibold">
                 <i class="bi bi-tag me-1 text-primary"></i>Stop Name
             </label>
-            <input asp-for="Name" class="form-control" readonly="@(Model.Type == StopType.Hub)"/>
+            <input asp-for="Name" class="form-control" readonly="@(Model.Type == StopType.Depot)"/>
             <span asp-validation-for="Name" class="text-danger small"></span>
         </div>
         <div class="col-md-6">
             <label asp-for="Address" class="form-label fw-semibold">
                 <i class="bi bi-geo-alt me-1 text-primary"></i>Address
             </label>
-            <input asp-for="Address" class="form-control" readonly="@(Model.Type == StopType.Hub)"/>
+            <input asp-for="Address" class="form-control" readonly="@(Model.Type == StopType.Depot)"/>
             <span asp-validation-for="Address" class="text-danger small"></span>
         </div>
     </div>
@@ -42,14 +42,14 @@
     <input type="hidden" asp-for="Latitude" id="Latitude"/>
     <input type="hidden" asp-for="Longitude" id="Longitude"/>
 
-    <div id="selectionMap" style="height: 250px; border-radius: 0.375rem; z-index: 0;" data-enable-selection="@(Model.Type == StopType.Hub ? "false" : "true")"></div>
+    <div id="selectionMap" style="height: 250px; border-radius: 0.375rem; z-index: 0;" data-enable-selection="@(Model.Type == StopType.Depot ? "false" : "true")"></div>
     <div class="form-text text-muted mt-1">
         Lat: <span id="displayLat">--</span>, Lng: <span id="displayLng">--</span>
     </div>
     <span asp-validation-for="Latitude" class="text-danger small"></span>
     <span asp-validation-for="Longitude" class="text-danger small"></span>
     
-    @if (Model.Type != StopType.Hub) {
+    @if (Model.Type != StopType.Depot) {
         <hr class="my-3">
 
         <h6 class="text-muted text-uppercase small fw-bold mb-2">

@@ -27,4 +27,13 @@ public class StopService(BusDbContext dbContext)
 
         await dbContext.SaveChangesAsync();
     }
+    
+    public async Task DeleteStopAsync(int stopId)
+    {
+        var stop = await dbContext.Stops.FindAsync(stopId);
+        if (stop == null) throw new InvalidOperationException($"Stop {stopId} does not exist");
+        
+        dbContext.Stops.Remove(stop);
+        await dbContext.SaveChangesAsync();
+    }
 }

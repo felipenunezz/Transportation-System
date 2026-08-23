@@ -183,12 +183,24 @@ namespace Transportation_System.Controllers
 
                 context.Stops.Remove(stop);
             }
+            await using var transaction = await context.Database.BeginTransactionAsync();
 
-            await context.SaveChangesAsync();
-
-            if (route != null) await busService.RefreshQueueAsync(route.Id, route.RouteStops);
-
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await context.SaveChangesAsync();
+                if (route != null) await busService.RefreshQueueAsync(route.Id, route.RouteStops);
+                await transaction.CommitAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to delete Bus {@Stop}", stop);
+                return Conflict(new
+                {
+                    message =
+                        "This Stop cannot be deleted because the Route refresh or the bus reassignment failed"
+                });
+            }
         }
 
         private bool StopExists(int id)

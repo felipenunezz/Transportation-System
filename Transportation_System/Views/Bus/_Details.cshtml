@@ -31,7 +31,7 @@
         <i class="bi bi-geo-alt me-1"></i>Current Stop
     </dt>
     <dd class="col-sm-8 fw-semibold">
-        @if (Model.Status is BusStatus.AtStop or BusStatus.OffRoute)
+        @if (Model.StopId is not null)
         {
             @Html.DisplayFor(model => model.Stop!.Name)
         }
@@ -66,6 +66,21 @@
         <i class="bi bi-circle-fill me-1"></i>Status
     </dt>
     <dd class="col-sm-8">@Html.DisplayFor(model => model.Status)</dd>
+    
+    <dt class="col-sm-4 text-muted">
+        <i class="fa-regular fa-route"></i>On Route
+    </dt>
+    <dd class="col-sm-8">
+        @if (Model.OnRoute)
+        {
+            <span class="badge bg-success">On Route</span>
+        }
+        else
+        {
+            <span class="badge bg-secondary">Off Route</span>
+        }
+    </dd>
+
 
     <dt class="col-sm-4 text-muted">
         <i class="bi bi-clock me-1"></i>Last Update

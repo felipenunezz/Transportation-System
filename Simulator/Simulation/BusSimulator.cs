@@ -13,26 +13,33 @@ namespace Simulator.Simulation;
 public class BusSimulator(
     MqttPublisher mqttPublisher,
     IOptions<SimulationSettings> options,
-    ILogger<BusSimulator> logger)
+    ILogger<BusSimulator> logger,
+    BusDbContext db)
 {
     private readonly SimulationSettings _settings = options.Value;
     private readonly Random _random = new();
 
-    public async Task ProcessAsync(BusDbContext db, RoutingService routing, Bus bus, BusSimulationState state, CancellationToken ct)
+    private double CurrentSpeed { get; } = 0;
+
+    public async Task ProcessAsync( RoutingService routing, Bus bus, BusSimulationState state, CancellationToken ct)
     {
         // Idle bus with no route: pick one to run.
-        if (bus.Status == BusStatus.OffRoute && bus.RouteId == null)
+        if (!bus.OnRoute)
         {
             var activeRoutes = await db.Routes.Where(r => r.IsActive).ToListAsync(ct);
-            // Filter for non-empty RouteStops client-side — Npgsql/EF Core
-            // can't reliably translate .Count on an integer[] column.
             var runnable = activeRoutes.Where(r => r.RouteStops.Count > 0).ToList();
             if (runnable.Count == 0) return; // nothing available to simulate yet
-
+            if (db.Buses.Where(b => 
+                    runnable.Where(r => b.RouteId == r.Id).Any())
+                    .ToList().Any()) 
+                return; // this conditional, makes the buses work on an interval, while a bus is in a route, no new buses are going
+                        // to be assinged to that route. 
+            
             var chosen = runnable[_random.Next(runnable.Count)];
             bus.RouteId = chosen.Id;
             bus.StopQueue = new StopQueue(chosen.RouteStops).ToList();
-            bus.Status = BusStatus.OnRoute;
+            bus.OnRoute = true;
+            bus.Status = BusStatus.Staring;
             await db.SaveChangesAsync(ct);
 
             state.Reset();
@@ -59,7 +66,7 @@ public class BusSimulator(
         }
         else
         {
-            var hubs = await db.Stops.Where(s => s.Type == StopType.Hub).ToListAsync(ct);
+            var hubs = await db.Stops.Where(s => s.Type == StopType.Depot).ToListAsync(ct);
             if (hubs.Count == 0) return;
 
             var nearestHub = hubs
@@ -69,7 +76,7 @@ public class BusSimulator(
             var distanceToHub = GeoUtils.DistanceMeters(bus.CurrentLatitude, bus.CurrentLongitude, nearestHub.Latitude, nearestHub.Longitude);
             if (distanceToHub <= _settings.ArrivalThreshold)
             {
-                bus.Status = BusStatus.OffRoute;
+                bus.OnRoute = false;
                 bus.RouteId = null;
                 bus.StopId = nearestHub.Id;
                 bus.StopQueue = [];
@@ -113,12 +120,12 @@ public class BusSimulator(
         state.LastKnownQueueCount = queue.Count;
 
         var reportedPassengers = bus.PassengerCount;
-        var reportedStatus = BusStatus.OnRoute;
+        var reportedStatus = BusStatus.Moving;
+        var onRoute = false;
 
         if (arrivedNow)
         {
             reportedPassengers = (int)Math.Min(_settings.MaxPassangers, bus.PassengerCount + _random.Next(1, 11));
-            reportedStatus = BusStatus.AtStop;
         }
 
         var telemetry = new BusDto(
@@ -126,7 +133,8 @@ public class BusSimulator(
             CurrentLongitude: point.Lon,
             Speed: reachedEnd ? 0 : Math.Round(20 + _random.NextDouble() * 25, 1),
             PassengerCount: reportedPassengers,
-            Status: reportedStatus
+            Status: reportedStatus,
+            OnRoute: onRoute
         );
 
         await mqttPublisher.PublishAsync($"buses/{bus.Id}/telemetry", JsonSerializer.Serialize(telemetry), ct);
@@ -138,5 +146,20 @@ public class BusSimulator(
             // full extra tick once it's visually reached the target.
             state.CurrentLegShape = [];
         }
+    }
+
+    private async Task Start(Bus bus, CancellationToken ct)
+    {
+        if (bus is not { OnRoute: false, Status: BusStatus.Parked } || 
+            db.Routes.Any(r => db.Buses.Any(b => b.OnRoute && b.RouteId == r.Id))) return bus;
+        
+        var route = db.Routes.FirstOrDefault(r => r.Id == bus.RouteId);
+        if (route is { RouteStops.Count: > 0 }) return ;
+            
+        bus.OnRoute = true;
+        bus.Status = BusStatus.Staring;
+        bus.StopQueue = new StopQueue(route?.RouteStops).ToList();
+        
+        await db.SaveChangesAsync(ct);
     }
 }

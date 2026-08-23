@@ -19,7 +19,7 @@ public class DataSeed
                 Longitude = 44.052708,
                 WaitingPassengers = 0,
                 RouteId = null,
-                Type = StopType.Hub
+                Type = StopType.Depot
             },
             new()
             {
@@ -29,7 +29,7 @@ public class DataSeed
                 Longitude = 43.873070,
                 WaitingPassengers = 0,
                 RouteId = null,
-                Type = StopType.Hub
+                Type = StopType.Depot
             }
         };
 

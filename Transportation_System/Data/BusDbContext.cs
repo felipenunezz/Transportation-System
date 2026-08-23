@@ -24,14 +24,15 @@ public class BusDbContext(DbContextOptions<BusDbContext> options) : DbContext(op
         modelBuilder.Entity<Stop>()
             .HasOne(s => s.Route)
             .WithMany(r => r.Stops)
-            .HasForeignKey(s => s.RouteId);
+            .HasForeignKey(s => s.RouteId)
+            .IsRequired(false);
 
         modelBuilder.Entity<Bus>()
             .HasOne(b => b.Route)
             .WithMany()
             .HasForeignKey(b => b.RouteId)
             .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
+            .IsRequired();
 
         modelBuilder.Entity<Bus>()
             .HasOne(b => b.Stop)
@@ -41,6 +42,7 @@ public class BusDbContext(DbContextOptions<BusDbContext> options) : DbContext(op
             .IsRequired(false);
 
         //conversion string for enums.
+        
         modelBuilder.Entity<Stop>()
             .Property(s => s.Type)
             .HasConversion<string>()
@@ -54,7 +56,7 @@ public class BusDbContext(DbContextOptions<BusDbContext> options) : DbContext(op
         //constraints for the db, work in unison with IValidatableObject interface.
         modelBuilder.Entity<Stop>()
             .ToTable(t => t.HasCheckConstraint(
-                "CK_Stop_RouteRequired", "\"Type\" = 'Hub' OR \"RouteId\" IS NOT NULL"
+                "CK_Stop_RouteRequired", "\"Type\" = 'Depot' OR \"RouteId\" IS NOT NULL"
             ));
 
         //Parsing the List<Int> into a integer[] such that postgres can store the data, since List<int> is not valid.

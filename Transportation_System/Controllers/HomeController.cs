@@ -12,7 +12,7 @@ public class HomeController(BusDbContext context, RoutingService routingService)
     {
         var activeBuses = await context.Buses
             .Include(b => b.Route)
-            .Where(b => b.Status != BusStatus.OffRoute)
+            .Where(b => b.OnRoute)
             .ToListAsync();
 
         var stops = await context.Stops.ToListAsync();
@@ -32,7 +32,7 @@ public class HomeController(BusDbContext context, RoutingService routingService)
     public async Task<IActionResult> GetMapData()
     {
         var buses = await context.Buses
-            .Where(b => b.Status != BusStatus.OffRoute)
+            .Where(b => b.OnRoute)
             .Select(b => new {
                 id = b.Id,
                 busNumber = b.BusNumber,
@@ -50,7 +50,6 @@ public class HomeController(BusDbContext context, RoutingService routingService)
             latitude = s.Latitude,
             longitude = s.Longitude,
             waitingPassengers = s.WaitingPassengers,
-            routeId = s.RouteId
         }).ToListAsync();
 
         var routesRaw = await context.Routes.ToListAsync();
@@ -84,7 +83,7 @@ public class HomeController(BusDbContext context, RoutingService routingService)
                     .ToList();
             }
 
-            routes.Add(new { id = r.Id, name = r.Name, stops = shapePoints, isActive = r.IsActive });
+            routes.Add(new { id = r.Id, name = r.Name, stops = shapePoints, isActive = r.IsActive, routeStops = r.RouteStops });
         }
 
         return Json(new { buses, stops, routes });

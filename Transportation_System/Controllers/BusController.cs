@@ -9,7 +9,7 @@ namespace Transportation_System.Controllers;
 public class BusController(BusDbContext context, ILogger<BusController> logger) : Controller
 {
     private SelectList HubSelectList(int? selected = null) =>
-        new(context.Stops.Where(s =>s.Type == StopType.Hub), "Id", "Name", selected);
+        new(context.Stops.Where(s =>s.Type == StopType.Depot), "Id", "Name", selected);
 
     public async Task<IActionResult> Index()
     {
@@ -41,14 +41,13 @@ public class BusController(BusDbContext context, ILogger<BusController> logger) 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(
-        [Bind("RouteId,BusNumber,Speed,PassengerCount,Status,StopId")]
+        [Bind("RouteId,BusNumber,Speed,PassengerCount,StopId")]
         Bus bus)
     {
-        if (bus.Status == BusStatus.OffRoute) bus.RouteId = null;
-        else ModelState.Remove(nameof(Bus.StopId));
-        
         if (ModelState.IsValid)
         {
+            bus.OnRoute = false;
+            bus.Status = BusStatus.Parked;
             bus.LastUpdate = DateTime.UtcNow;
 
             if (bus.StopId is { } stopId)
@@ -85,7 +84,7 @@ public class BusController(BusDbContext context, ILogger<BusController> logger) 
         }
 
         ViewData["RouteId"] = new SelectList(context.Routes, "Id", "Name", bus.RouteId);
-        ViewData["StopId"] = new SelectList(context.Stops, "Id", "Name", bus.StopId);
+        ViewData["StopId"] = HubSelectList(bus.StopId);
         return PartialView("_Create", bus);
     }
 
@@ -103,16 +102,13 @@ public class BusController(BusDbContext context, ILogger<BusController> logger) 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id,
-        [Bind("Id,RouteId,CurrentLatitude,CurrentLongitude,BusNumber,Speed,PassengerCount,Status,StopId")]
+        [Bind("Id,RouteId,CurrentLatitude,CurrentLongitude,BusNumber,Speed,PassengerCount,Status,StopId, OnRoute")]
         Bus bus)
     {
         if (id != bus.Id) return NotFound();
 
         var existing = await context.Buses.AsNoTracking().FirstOrDefaultAsync(b => b.Id == id);
         if (existing == null) return NotFound();
-
-        if (bus.Status == BusStatus.OffRoute) bus.RouteId = null;
-        else ModelState.Remove(nameof(Bus.StopId));
 
         if (ModelState.IsValid)
         {
@@ -138,13 +134,14 @@ public class BusController(BusDbContext context, ILogger<BusController> logger) 
 
                 bus.StopQueue = queue.ToList();
             }
-            else
-            {
-                bus.StopQueue = existing.StopQueue;
-            }
+            else bus.StopQueue = existing.StopQueue;
 
             try
             {
+                bus.OnRoute = existing.OnRoute;
+                
+                if (!bus.OnRoute) bus.Status = BusStatus.Returning;
+                
                 bus.LastUpdate = DateTime.UtcNow;
                 context.Update(bus);
                 await context.SaveChangesAsync();
@@ -159,7 +156,7 @@ public class BusController(BusDbContext context, ILogger<BusController> logger) 
         }
 
         ViewData["RouteId"] = new SelectList(context.Routes, "Id", "Name", bus.RouteId);
-        ViewData["StopId"] = new SelectList(context.Stops, "Id", "Name", bus.StopId);
+        ViewData["StopId"] = HubSelectList(bus.StopId);
         return View("_Edit", bus);
     }
 

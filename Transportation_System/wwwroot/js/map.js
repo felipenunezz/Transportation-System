@@ -48,11 +48,11 @@ function updateBusMarker(bus) {
 }
 
 function addStopMarker(stop) {
-    var  route  = data.routes.select(route => route.id = stop.routeId)
-    if (route.isActive !== true) {return;}
+    const route = window.__mapData?.routes?.find (r => r.routeStops?.includes(stop.id));
+    if (route && route.isActive === false) return;
     
     const popup = new maplibregl.Popup({ offset: 12 })
-        .setHTML(`<b>${name}</b><br>Waiting: ${stop.waitingPassengers} passengers`);
+        .setHTML(`<b>${stop.name}</b><br>Waiting: ${stop.waitingPassengers} passengers`);
     const marker = new maplibregl.Marker({ element: createIconElement('🚏', 22) })
         .setLngLat([stop.longitude, stop.latitude])
         .setPopup(popup)
@@ -96,6 +96,7 @@ async function loadMapData() {
     try {
         const response = await fetch('/api/mapdata');
         const data = await response.json();
+        window.__mapData = data;
 
         console.log('Loaded data:', data);
 
@@ -111,7 +112,7 @@ async function loadMapData() {
         if (data.routes && data.routes.length > 0) {
             const colors = ['#3388ff', '#ff6633', '#33cc33', '#ff33cc'];
             data.routes.forEach((route, index) => {
-                if (route.stops && route.stops.length > 1) {
+                if (route.stops && route.stops.length > 1 && route.isActive === true) {
                     const coordinates = route.stops.map(p => [p.latitude, p.longitude]);
                     drawRoute(coordinates, colors[index % colors.length]);
                 }

@@ -31,6 +31,9 @@
             @Html.DisplayNameFor(model => model.Status)
         </th>
         <th>
+            @Html.DisplayNameFor(model => model.OnRoute)
+        </th>
+        <th>
             @Html.DisplayNameFor(model => model.LastUpdate)
         </th>
         <th></th>
@@ -50,7 +53,7 @@
                 else {<span>Currently off route</span>}
             </td>
             <td>
-                @if (item.Status is BusStatus.AtStop or BusStatus.OffRoute)
+                @if (item.StopId is not null)
                 {
                     @Html.DisplayFor(modelItem => item.Stop!.Name)
                 }
@@ -64,6 +67,18 @@
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.Status)
+            </td>
+            <td>
+                <dd class="col-sm-8">
+                    @if (item.OnRoute)
+                    {
+                        <span class="badge bg-success">On Route</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Off Route</span>
+                    }
+                </dd>
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.LastUpdate)

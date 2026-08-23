@@ -29,7 +29,7 @@ public class Stop : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (Type != StopType.Hub && RouteId == null)
+        if (Type != StopType.Depot && RouteId == null)
         {
             yield return new ValidationResult(
                 "Please select a route.",
@@ -41,5 +41,5 @@ public class Stop : IValidatableObject
 public enum StopType
 {
     RouteStop,
-    Hub
+    Depot
 }

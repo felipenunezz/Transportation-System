@@ -62,7 +62,6 @@ public class BusService(BusDbContext dbContext)
             queue.Dequeue();
             bus.StopQueue = queue.ToList();
             bus.StopId = nextStop.Id;
-            bus.Status = BusStatus.AtStop;
         }
     }
 
@@ -87,13 +86,13 @@ public class BusService(BusDbContext dbContext)
     public async Task ReassignBusAsync(int routeId)
     {
         var affectedBuses = await dbContext.Buses
-            .Where(b => b.RouteId == routeId && b.Status != BusStatus.OffRoute)
+            .Where(b => b.RouteId == routeId && b.OnRoute)
             .ToListAsync();
 
         if (affectedBuses.Count == 0) return;
 
         var hubs = await dbContext.Stops
-            .Where(s => s.Type == StopType.Hub)
+            .Where(s => s.Type == StopType.Depot)
             .ToListAsync();
 
         foreach (var bus in affectedBuses)
@@ -101,14 +100,14 @@ public class BusService(BusDbContext dbContext)
             var nearestHub = hubs
                 .OrderBy(h => DistanceMeters(bus.CurrentLatitude, bus.CurrentLongitude, h.Latitude, h.Longitude))
                 .FirstOrDefault();
-
-            bus.RouteId = null;
+            
             bus.StopQueue = new StopQueue().ToList();
 
             if (nearestHub != null) bus.StopId = nearestHub.Id;
             else bus.StopId = DefaultHub;
 
-            bus.Status = BusStatus.OffRoute;
+            bus.Status = BusStatus.Returning;
+            bus.OnRoute = false;
             bus.LastUpdate = DateTime.UtcNow;
         }
 

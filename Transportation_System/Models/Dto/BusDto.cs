@@ -7,5 +7,6 @@ public record BusDto(
     double CurrentLongitude,
     double Speed,
     int PassengerCount,
-    BusStatus Status
+    BusStatus Status,
+    bool OnRoute
 );

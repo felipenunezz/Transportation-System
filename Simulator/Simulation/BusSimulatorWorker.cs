@@ -42,7 +42,7 @@ public class BusSimulationWorker(
 
                 try
                 {
-                    await busSimulator.ProcessAsync(db, routing, bus, state, stoppingToken);
+                    await busSimulator.ProcessAsync(routing, bus, state, stoppingToken);
                 }
                 catch (Exception ex)
                 {

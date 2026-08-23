@@ -8,7 +8,7 @@ using Route = Transportation_System.Models.Domain.Route;
 
 namespace Transportation_System.Controllers;
 
-public class RouteController(BusDbContext context, BusService busService, ILogger<RouteController> logger) : Controller
+public class RouteController(BusDbContext context, BusService busService, StopService stopService, ILogger<RouteController> logger) : Controller
 {
     public async Task<IActionResult> Index()
     {
@@ -81,40 +81,37 @@ public class RouteController(BusDbContext context, BusService busService, ILogge
         existingRoute.Description = route.Description;
         existingRoute.IsActive = route.IsActive;
         existingRoute.RouteStops = route.RouteStops ?? [];
+        
+        await using var transaction =  await context.Database.BeginTransactionAsync();
+        try {
+            if (deletedStopId != null && deletedStopId.Count != 0)
+            { 
+                var otherRoutes = await context.Routes
+                    .Where(r => r.Id != id)
+                    .ToListAsync();
+            
+                var affectedRoutes = otherRoutes
+                    .Where(r => r.RouteStops.Any(deletedStopId.Contains))
+                    .ToList();
 
-        if (deletedStopId != null && deletedStopId.Count != 0)
-        {
-            var otherRoutes = await context.Routes
-                .Where(r => r.Id != id)
-                .ToListAsync();
+                foreach (var tempRoute in affectedRoutes) tempRoute.RouteStops.RemoveAll(deletedStopId.Contains);
+                
+                var stopsToDelete = await context.Stops
+                    .Where(s => deletedStopId.Contains(s.Id))
+                    .ToListAsync();
 
-            var affectedRoutes = otherRoutes
-                .Where(r => r.RouteStops.Any(deletedStopId.Contains))
-                .ToList();
-
-            foreach (var tempRoute in affectedRoutes)
-            {
-                tempRoute.RouteStops.RemoveAll(deletedStopId.Contains);
+                context.Stops.RemoveRange(stopsToDelete);
             }
-
-            var stopsToDelete = await context.Stops
-                .Where(s => deletedStopId.Contains(s.Id))
-                .ToListAsync();
-
-            context.Stops.RemoveRange(stopsToDelete);
-        }
-
-        try
-        {
+            await busService.RefreshQueueAsync(route.Id, existingRoute.RouteStops);
             await context.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (Exception)
         {
             if (!RouteExists(route.Id)) return NotFound();
             throw;
         }
 
-        await busService.RefreshQueueAsync(route.Id, existingRoute.RouteStops);
         return RedirectToAction(nameof(Index));
     }
 
@@ -136,22 +133,29 @@ public class RouteController(BusDbContext context, BusService busService, ILogge
     {
         var route = await context.Routes.FindAsync(id);
         if (route == null) return RedirectToAction(nameof(Index));
-
-        await busService.ReassignBusAsync(id);
-
-        context.Routes.Remove(route);
+        
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        
         try
         {
+            await busService.ReassignBusAsync(id); 
+            foreach (var s in route.RouteStops) 
+            { 
+                await stopService.DeleteStopAsync(s); // deletes in cascade the stops when trying to delete a stop, then it deletes it entirely.
+            }                                       
+            context.Routes.Remove(route);
             await context.SaveChangesAsync();
+            
+            await transaction.CommitAsync();
             return RedirectToAction(nameof(Index));
         }
-        catch (DbUpdateException ex)
+        catch (Exception ex)
         {
             logger.LogError(ex, "Failed to delete Route {Id}", id);
             return Conflict(new
             {
                 message =
-                    "This route cannot be deleted because it still has buses or stops assigned to it. Reassign or remove them first."
+                    "This route cannot be deleted because the stop deletion or the bus reassignment failed"
             });
         }
     }
