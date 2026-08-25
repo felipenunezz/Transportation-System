@@ -36,7 +36,7 @@ public class Bus
 
 public enum BusStatus
 {
-    Staring,
+    Starting,
     AtStop,
     Moving,
     Returning,

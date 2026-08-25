@@ -22,47 +22,47 @@ public class BusService(BusDbContext dbContext)
     {
         return await dbContext.Buses.FindAsync(busId);
     }
+    //start updates method
+    public async Task UpdateBusAsync(int busId, BusStartDto start)
+    {
+        var bus = await dbContext.Buses.FindAsync(busId);
 
-    public async Task UpdateBusAsync(int busId, BusDto telemetry)
+        if (bus == null) throw new InvalidOperationException($"Bus {busId} does not exist");
+        
+        bus.Status = start.Status;
+        bus.StopQueue = start.StopQueue;
+        bus.LastUpdate = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync();
+    }
+    
+    //movement updates method
+    public async Task UpdateBusAsync(int busId, BusMovementDto movement)
     {
         var bus = await dbContext.Buses.FindAsync(busId);
 
         if (bus == null) throw new InvalidOperationException($"Bus {busId} does not exist");
 
-        bus.CurrentLatitude = telemetry.CurrentLatitude;
-        bus.CurrentLongitude = telemetry.CurrentLongitude;
-        bus.Speed = telemetry.Speed;
-        bus.PassengerCount = telemetry.PassengerCount;
-        bus.Status = telemetry.Status;
+        bus.CurrentLatitude = movement.CurrentLatitude;
+        bus.CurrentLongitude = movement.CurrentLongitude;
+        bus.Speed = movement.Speed;
+        bus.Status = movement.Status;
+        bus.StopId = movement.CurrentStopId;
+        bus.StopQueue = movement.StopQueue;
         bus.LastUpdate = DateTime.UtcNow;
-
-        await TryAdvanceAsync(bus);
 
         await dbContext.SaveChangesAsync();
     }
-
-    private async Task TryAdvanceAsync(Bus bus)
+    
+    //passengers updates method
+    public async Task UpdateBusAsync(int busId, BusPassengerDto passenger)
     {
-        var queue = new StopQueue(bus.StopQueue);
-        var nextStopId = queue.Peek();
-        if (nextStopId == null) return;
-
-        var nextStop = await dbContext.Stops.FindAsync(nextStopId.Value);
-
-        if (nextStop == null)
-        {
-            queue.Dequeue();
-            bus.StopQueue = queue.ToList();
-            return;
-        }
-
-        var distance = DistanceMeters(bus.CurrentLatitude, bus.CurrentLongitude, nextStop.Latitude, nextStop.Longitude);
-        if (distance <= ArrivalThresholdMeters)
-        {
-            queue.Dequeue();
-            bus.StopQueue = queue.ToList();
-            bus.StopId = nextStop.Id;
-        }
+        var bus = await dbContext.Buses.FindAsync(busId);
+        if (bus == null) throw new InvalidOperationException($"Bus {busId} does not exist");
+        
+        bus.PassengerCount = passenger.PassengerCount;
+        
+        await dbContext.SaveChangesAsync();
     }
 
     public async Task RefreshQueueAsync(int routeId, List<int> orderedStopIds)
