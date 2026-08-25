@@ -3,51 +3,47 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Simulator.Mqtt;
+using Simulator.Devices;
 using Transportation_System.Data;
-using Transportation_System.Services;
 
 namespace Simulator.Simulation;
 
 public class BusSimulationWorker(
     IServiceScopeFactory scopeFactory,
-    MqttPublisher mqttPublisher,
-    BusSimulator busSimulator,
     IOptions<SimulationSettings> options,
     ILogger<BusSimulationWorker> logger) : BackgroundService
 {
     private readonly SimulationSettings _settings = options.Value;
-    private readonly Dictionary<int, BusSimulationState> _states = new();
+    private readonly Dictionary<int, BusDeviceState> _states = new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await mqttPublisher.ConnectAsync(stoppingToken);
-        logger.LogInformation("Connected to MQTT broker.");
-
         while (!stoppingToken.IsCancellationRequested)
         {
             using var scope = scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<BusDbContext>();
-            var routing = scope.ServiceProvider.GetRequiredService<RoutingService>();
+            var busSimulator = scope.ServiceProvider.GetRequiredService<BusSimulator>();
+            var stopSimulator = scope.ServiceProvider.GetRequiredService<StopSimulator>();
 
             var buses = await db.Buses.ToListAsync(stoppingToken);
+            var stops = await db.Stops.ToListAsync(stoppingToken);
 
             foreach (var bus in buses)
             {
                 if (!_states.TryGetValue(bus.Id, out var state))
                 {
-                    state = new BusSimulationState();
+                    state = new BusDeviceState();
                     _states[bus.Id] = state;
                 }
 
-                try
-                {
-                    await busSimulator.ProcessAsync(routing, bus, state, stoppingToken);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Simulation step failed for bus {BusId}", bus.Id);
-                }
+                try { await busSimulator.ProcessAsync(bus, state, stoppingToken); }
+                catch (Exception ex) { logger.LogError(ex, "Simulation tick failed for bus {BusId}", bus.Id); }
+            }
+
+            foreach (var stop in stops)
+            {
+                try { await stopSimulator.ProcessAsync(stop, stoppingToken); }
+                catch (Exception ex) { logger.LogError(ex, "Ambient passenger tick failed for stop {StopId}", stop.Id); }
             }
 
             foreach (var goneId in _states.Keys.Except(buses.Select(b => b.Id)).ToList())

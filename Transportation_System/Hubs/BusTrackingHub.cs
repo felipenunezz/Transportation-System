@@ -13,11 +13,6 @@ public class BusTrackingHub(BusService busService, TelemetryProcessor telemetryP
         await Clients.All.SendAsync("ReceiveMessage", message, bus);
     }
 
-    public async Task RequestBusUpdate(int busId, BusDto busDto)
-    {
-        await telemetryProcessor.ProcessBusAsync(busId, busDto);
-    }
-
     public async Task<Bus> GetBusAsync(int busId)
     {
         var bus = await busService.GetBusIdAsync(busId);

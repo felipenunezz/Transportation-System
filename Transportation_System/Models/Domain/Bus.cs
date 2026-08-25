@@ -11,7 +11,7 @@ public class Bus
     [MaxLength(10)]
     public string? BusNumber { get; set; }
 
-    [Display(Name = "Route Id")] public int? RouteId { get; set; }
+    [Display(Name = "Route Id")] public int RouteId { get; set; }
     public Route Route { get; set; }
     
     public bool OnRoute { get; set; }

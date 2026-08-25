@@ -2,35 +2,19 @@
 
 namespace Transportation_System.Models.Dto;
 
-public record BusDto(
+public record Gps (
     double CurrentLatitude,
     double CurrentLongitude,
-    double Speed,
-    int PassengerCount,
-    int? CurrentStopId,
-    BusStatus Status,
-    bool OnRoute
-);
-
-public record BusStartDto(
-    bool OnRoute,
-    BusStatus Status,
-    List<int>  StopQueue
+    TimeSpan ElapsedTime
     );
 
-public record BusFinishDto(
+public record Speedometer ( double CurrentSpeed );
+public record BusPassenger ( int  PassengerCount );
+
+public record Terminal (
+    BusStatus BusStatus,
+    int RouteId,
     bool OnRoute,
-    BusStatus Status,
-    List<int> StopQueue
+    List<int> StopQueue,
+    int? CurrentStopId
     );
-
-public record BusMovementDto(
-    BusStatus Status,
-    double CurrentLatitude,
-    double CurrentLongitude,
-    double Speed,
-    int? CurrentStopId,
-    List<int>  StopQueue
-);
-
-public record BusPassengerDto( int  PassengerCount );

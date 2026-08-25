@@ -65,9 +65,8 @@ public class BusController(BusDbContext context, ILogger<BusController> logger) 
             try
             {
                 await context.SaveChangesAsync();
-
-                if (bus.RouteId is not { } routeId) return RedirectToAction(nameof(Index));
-                var route = await context.Routes.FindAsync(routeId);
+                
+                var route = await context.Routes.FindAsync(bus.RouteId);
                 if (route == null) return RedirectToAction(nameof(Index));
                 var queue = new StopQueue(route.RouteStops);
                 bus.StopQueue = queue.ToList();

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Simulator.Devices;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -22,8 +23,14 @@ builder.Services.AddHttpClient<RoutingService>(client =>
 });
 
 builder.Services.Configure<SimulationSettings>(builder.Configuration.GetSection("SimulationSettings"));
-builder.Services.AddSingleton<MqttPublisher>();
-builder.Services.AddSingleton<BusSimulator>();
+
+builder.Services.AddScoped<FleetTerminal>();
+builder.Services.AddScoped<SpeedometerDevice>();
+builder.Services.AddScoped<GpsDevice>();
+builder.Services.AddScoped<PassangerCounterDevice>();
+builder.Services.AddScoped<BusSimulator>();
+builder.Services.AddScoped<StopSimulator>();
+
 builder.Services.AddHostedService<BusSimulationWorker>();
 
 var host = builder.Build();

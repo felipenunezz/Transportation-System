@@ -46,14 +46,14 @@
                 @Html.DisplayFor(modelItem => item.BusNumber)
             </td>
             <td>
-                @if (item.RouteId is not null)
+                @if (item.OnRoute)
                 {
                     @Html.DisplayFor(modelItem => item.Route!.Name)
                 }
                 else {<span>Currently off route</span>}
             </td>
             <td>
-                @if (item.StopId is not null)
+                @if (item is {Status: BusStatus.AtStop, StopId: not null})
                 {
                     @Html.DisplayFor(modelItem => item.Stop!.Name)
                 }

@@ -1,5 +1,4 @@
-﻿using System.Reflection.Metadata;
-using MQTTnet;
+﻿using MQTTnet;
 using System.Text.Json;
 using Transportation_System.Models.Dto;
 using Transportation_System.Services;
@@ -18,6 +17,8 @@ public class MqttService : BackgroundService
     private const string BusTopic = "buses/+/+";
     private const string StopTopic = "stops/+/+";
 
+    private readonly Dictionary<string, Func<string, object>> _busTelemetryHandlers;
+
     public MqttService(IServiceScopeFactory scopeFactory, ILogger<MqttService> logger, IConfiguration config)
     {
         _logger = logger;
@@ -28,6 +29,15 @@ public class MqttService : BackgroundService
 
         _mqttClientFactory = new MqttClientFactory();
         _mqttClient = _mqttClientFactory.CreateMqttClient();
+
+        // Initialize handlers for different bus telemetry types
+        _busTelemetryHandlers = new Dictionary<string, Func<string, object>>
+        {
+            ["gps"] = payload => JsonSerializer.Deserialize<Gps>(payload),
+            ["speed"] = payload => JsonSerializer.Deserialize<Speedometer>(payload),
+            ["passengers"] = payload => JsonSerializer.Deserialize<BusPassenger>(payload),
+            ["terminal"] = payload => JsonSerializer.Deserialize<Terminal>(payload)
+        };
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -95,7 +105,6 @@ public class MqttService : BackgroundService
             }
 
             var entityType = parts[0];
-            var messageType = parts[2];
 
             if (!int.TryParse(parts[1], out var entityId))
             {
@@ -107,31 +116,18 @@ public class MqttService : BackgroundService
             using var scope = _scopeFactory.CreateScope();
             var processor = scope.ServiceProvider.GetRequiredService<TelemetryProcessor>();
 
-            switch (entityType, messageType)
+            switch (entityType)
             {
-                case ("buses", "Start"):
-                    await  HandleBusStart(processor, entityId, payload, topic);
+                case "buses":
+                    await HandleBusTelemetry(processor, entityId, payload, topic);
                     break;
                 
-                case ("buses", "Stop"):
-                    await HandleBusFinish(processor, entityId, payload, topic);
-                    break;
-                
-                case ("buses", "Movement"):
-                    await HandleBusMovment(processor, entityId, payload, topic);
-                    break;
-                
-                case ("buses", "passengers"):
-                    await HandleBusPassangers(processor, entityId, payload, topic);
-                    break;
-                
-                case ("stops", "passengers"):
+                case "stops":
                     await HandleStopTelemetry(processor, entityId, payload, topic);
                     break;
 
                 default:
-                    _logger.LogWarning("Unhandled topic {Topic} (entityType={EntityType}, messageType={MessageType})",
-                        topic, entityType, messageType);
+                    _logger.LogWarning("Unhandled entity type {EntityType} for topic {Topic}", entityType, topic);
                     break;
             }
         }
@@ -154,42 +150,42 @@ public class MqttService : BackgroundService
         await base.StopAsync(cancellationToken);
     }
 
-    private async Task HandleBusStart(TelemetryProcessor processor, int busId, string payload, string topic)
+    private async Task HandleBusTelemetry(TelemetryProcessor processor, int busId, string payload, string topic)
     {
-        var dto = JsonSerializer.Deserialize<BusStartDto>(payload);
-        if (dto is null)
+        var parts = topic.Split('/');
+        if (parts.Length < 3)
         {
-            _logger.LogWarning("Could not parse payload on {Topic}: {Payload}", topic, payload);
-            return;
-        }
-        await processor.ProcessBusAsync(busId, dto);
-    }
-
-    private async Task HandleBusFinish(TelemetryProcessor processor, int busId, string payload, string topic)
-    {
-    }
-
-    private async Task HandleBusMovment(TelemetryProcessor processor, int busId, string payload, string topic)
-    {
-        var dto = JsonSerializer.Deserialize<BusMovementDto>(payload);
-        if (dto is null)
-        {
-            _logger.LogWarning("Could not parse payload on {Topic}: {Payload}", topic, payload);
+            _logger.LogWarning("Invalid topic format for bus telemetry: {Topic}", topic);
             return;
         }
 
-        await processor.ProcessBusAsync(busId, dto);
-    }
+        var messageType = parts[2];
 
-    private async Task HandleBusPassangers(TelemetryProcessor processor, int busId, string payload, string topic)
-    {
-        var dto = JsonSerializer.Deserialize<BusPassengerDto>(payload);
-        if (dto is null)
+        if (!_busTelemetryHandlers.TryGetValue(messageType, out var handler))
         {
-            _logger.LogWarning("Could not parse payload on {Topic}: {Payload}", topic, payload);
+            _logger.LogWarning("Unhandled bus telemetry type: {MessageType} for topic {Topic}", messageType, topic);
             return;
         }
-        await processor.ProcessBusAsync(busId, dto);
+
+        try
+        {
+            var dto = handler(payload);
+            if (dto is null)
+            {
+                _logger.LogWarning("Could not parse payload on {Topic}: {Payload}", topic, payload);
+                return;
+            }
+
+            await processor.ProcessBusAsync(busId, messageType, dto);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "JSON parsing error for topic {Topic} with payload: {Payload}", topic, payload);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing bus telemetry for topic {Topic}", topic);
+        }
     }
 
     private async Task HandleStopTelemetry(TelemetryProcessor processor, int stopId, string payload, string topic)

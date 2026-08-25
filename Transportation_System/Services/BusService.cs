@@ -55,7 +55,7 @@ public class BusService(BusDbContext dbContext)
     }
     
     //passengers updates method
-    public async Task UpdateBusAsync(int busId, BusPassengerDto passenger)
+    public async Task UpdateBusAsync(int busId, BusPassenger passenger)
     {
         var bus = await dbContext.Buses.FindAsync(busId);
         if (bus == null) throw new InvalidOperationException($"Bus {busId} does not exist");
