@@ -11,8 +11,7 @@ public class TelemetryProcessor(
     BusService busService,
     StopService stopService,
     IHubContext<BusTrackingHub> hub,
-    ILogger<TelemetryProcessor> logger,
-    BusDbContext context)
+    ILogger<TelemetryProcessor> logger)
 {
     public async Task ProcessBusAsync(int busId, string messageType, object dto)
     {
@@ -40,6 +39,7 @@ public class TelemetryProcessor(
         }
     }
 
+    //Stop processing
     public async Task ProcessStopAsync(int stopId, StopDto passenger)
     {
         if (passenger.WaitingPassengers < 0)
@@ -61,9 +61,30 @@ public class TelemetryProcessor(
         await hub.Clients.All.SendAsync("StopUpdated", stopId);
     }
 
+    //Bus processing
     private async Task ProcessGpsAsync(int busId, Gps gps)
     {
+        bool ValidCoordinates =  true;
         
+        if (gps is { CurrentLatitude: 0, CurrentLongitude: 0 }) ValidCoordinates = false;
+        if (gps.CurrentLatitude  is < -90  or > 90) ValidCoordinates = false;
+        if (gps.CurrentLongitude is < -180 or > 180) ValidCoordinates = false;
+        
+        if  (!ValidCoordinates)
+        {
+            logger.LogError("Invalid latitude:{Latitude} or longitude: {Longitude}", gps.CurrentLatitude, gps.CurrentLongitude);
+        }
+
+        try
+        {
+            await busService.UpdateBusGpsAsync(busId, gps);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error saving gps: {Gps}", gps);
+            return;
+        }
+        await hub.Clients.All.SendAsync("GpsUpdated", gps);
     }
 
     private async Task ProcessSpeedAsync(int busId, Speedometer speed)
@@ -76,7 +97,7 @@ public class TelemetryProcessor(
 
         try
         {
-            await BusService.UpdateBusSpeedAsync(busId, speed);
+            await busService.UpdateBusSpeedAsync(busId, speed);
         }
         catch (Exception e)
         {
@@ -96,7 +117,7 @@ public class TelemetryProcessor(
 
         try
         {
-            await BusService.UpdateBusPassengerAsync(busId, passenger);
+            await busService.UpdateBusPassengerAsync(busId, passenger);
         }
         catch (Exception e)
         {
@@ -115,5 +136,18 @@ public class TelemetryProcessor(
         if (terminal.CurrentStopId == new StopQueue(terminal.StopQueue).Peek()) ValidTerminal = false;
         if (terminal.CurrentStopId == null && terminal.BusStatus == BusStatus.AtStop) ValidTerminal = false;
         if (terminal is { OnRoute: true, StopQueue.Count: 0 }) ValidTerminal = false;
+        
+        if (!ValidTerminal) logger.LogError("Invalid terminal: {Terminal}", terminal);
+
+        try
+        {
+            await busService.UpdateBusTerminalAsync(busId, terminal);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error saving terminal: {Terminal}", terminal);
+            return;
+        }
+        await hub.Clients.All.SendAsync("TerminalUpdated", terminal);
     }
 }

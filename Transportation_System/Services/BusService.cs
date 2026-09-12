@@ -22,48 +22,63 @@ public class BusService(BusDbContext dbContext)
     {
         return await dbContext.Buses.FindAsync(busId);
     }
-    //start updates method
-    public async Task UpdateBusAsync(int busId, BusStartDto start)
+    
+    //gps updates method
+    public async Task UpdateBusGpsAsync(int busId, Gps gps)
     {
         var bus = await dbContext.Buses.FindAsync(busId);
 
         if (bus == null) throw new InvalidOperationException($"Bus {busId} does not exist");
-        
-        bus.Status = start.Status;
-        bus.StopQueue = start.StopQueue;
+
+        bus.CurrentLatitude = gps.CurrentLatitude;
+        bus.CurrentLongitude = gps.CurrentLongitude;
         bus.LastUpdate = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync();
     }
     
-    //movement updates method
-    public async Task UpdateBusAsync(int busId, BusMovementDto movement)
+    //speed updates method
+    public async Task UpdateBusSpeedAsync(int busId, Speedometer speedometer)
     {
         var bus = await dbContext.Buses.FindAsync(busId);
 
         if (bus == null) throw new InvalidOperationException($"Bus {busId} does not exist");
 
-        bus.CurrentLatitude = movement.CurrentLatitude;
-        bus.CurrentLongitude = movement.CurrentLongitude;
-        bus.Speed = movement.Speed;
-        bus.Status = movement.Status;
-        bus.StopId = movement.CurrentStopId;
-        bus.StopQueue = movement.StopQueue;
+        bus.Speed = speedometer.CurrentSpeed;
         bus.LastUpdate = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync();
     }
     
     //passengers updates method
-    public async Task UpdateBusAsync(int busId, BusPassenger passenger)
+    public async Task UpdateBusPassengerAsync(int busId, BusPassenger passenger)
     {
         var bus = await dbContext.Buses.FindAsync(busId);
         if (bus == null) throw new InvalidOperationException($"Bus {busId} does not exist");
         
         bus.PassengerCount = passenger.PassengerCount;
+        bus.LastUpdate = DateTime.UtcNow;
         
         await dbContext.SaveChangesAsync();
     }
+    
+    //Terminal updates method
+    public async Task UpdateBusTerminalAsync(int busId, Terminal terminal)
+    {
+        var bus = await dbContext.Buses.FindAsync(busId);
+        if (bus == null) throw new InvalidOperationException($"Bus {busId} does not exist");
+        
+        bus.Status = terminal.BusStatus;
+        bus.StopId = terminal.CurrentStopId;
+        bus.OnRoute = terminal.OnRoute;
+        bus.RouteId = terminal.RouteId;
+        bus.StopQueue = terminal.StopQueue;
+        bus.LastUpdate = DateTime.UtcNow;
+        
+        await dbContext.SaveChangesAsync();
+    }
+
+    //Route Queue Methods
 
     public async Task RefreshQueueAsync(int routeId, List<int> orderedStopIds)
     {
